@@ -9,4 +9,4 @@ spec:
   owner: guests
   system: examples
   definition:
-    $text: hhttps://github.com/bjuvensjo/backstage-slask/blob/main/api/baz-api.yaml
+    $text: https://github.com/bjuvensjo/backstage-slask/blob/main/api/baz-api.yaml
