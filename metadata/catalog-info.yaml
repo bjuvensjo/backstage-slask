@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: slask2-metadata
+  annotations:
+    github.com/project-slug: bjuvensjo/backstage-slask
+spec:
+  type: other
+  lifecycle: live
+  owner: guests
