@@ -27,56 +27,7 @@ metadata:
 spec:
   type: openapi
   lifecycle: production
-  owner: user:bjuvensjo
-  definition:
-    $text: |
-      openapi: 3.0.0
-      info:
-        title: User Management API
-        version: 1.0.0
-        description: This API allows CRUD operations on user data.
-      paths:
-        /users:
-          get:
-            summary: List all users
-            responses:
-              '200':
-                description: A list of users.
-          post:
-            summary: Create a new user
-            requestBody:
-              content:
-                application/json:
-                  schema:
-                    $ref: '#/components/schemas/User'
-            responses:
-              '201':
-                description: The created user.
-        /users/{id}:
-          get:
-            summary: Get a specific user by ID
-            parameters:
-              - name: id
-                in: path
-                required: true
-                schema:
-                  type: string
-            responses:
-              '200':
-                description: The user with the specified ID.
-              '404':
-                description: User not found.
-      components:
-        schemas:
-          User:
-            type: object
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              email:
-                type: string
+  owner: user:bjuvensjo 
 
 # Define the third entity: API for product catalog data
 ---
@@ -95,17 +46,3 @@ spec:
   type: graphql
   lifecycle: production
   owner: user:bjuvensjo
-  definition:
-    $text: |
-      type Product {
-        id: ID!
-        name: String!
-        description: String
-        price: Float!
-        category: String!
-      }
-
-      type Query {
-        products: [Product]
-        product(id: ID!): Product
-      }
