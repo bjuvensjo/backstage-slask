@@ -1,0 +1,38 @@
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: artist-api
+  description: Retrieve artist details
+spec:
+  type: openapi
+  lifecycle: production
+  owner: guests
+  system: examples
+  definition:
+    $value: |
+      openapi: 3.0.0
+      info:
+        title: Artist API
+        version: 1.0.0
+      paths:
+        /artists:
+          get:
+            summary: Retrieve all artists
+            responses:
+              '200':
+                description: Successful response
+                content:
+                  application/json:
+                    schema:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Artist'
+      components:
+        schemas:
+          Artist:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
