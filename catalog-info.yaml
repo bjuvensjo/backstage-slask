@@ -15,7 +15,7 @@ kind: API
 metadata:
   name: user-management-api
   description: API for managing user data in our platform.
-  owner: team-backend
+  owner: guests
   tags:
     - rest
     - user-management
@@ -24,7 +24,7 @@ metadata:
 spec:
   type: openapi
   lifecycle: production
-  owner: user:john_doe
+  owner: user:bjuvensjo
   definition:
     $text: >
       openapi: 3.0.0
@@ -80,7 +80,7 @@ kind: API
 metadata:
   name: product-catalog-api
   description: GraphQL API for accessing product catalog data.
-  owner: team-frontend
+  owner: guests
   tags:
     - graphql
     - product
@@ -89,7 +89,7 @@ metadata:
 spec:
   type: graphql
   lifecycle: production
-  owner: user:jane_doe
+  owner: user:bjuvensjo
   definition:
     $text: >
       type Product {
