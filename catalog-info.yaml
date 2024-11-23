@@ -1,3 +1,4 @@
+# Define the first entity: a Component
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component
@@ -9,6 +10,8 @@ spec:
   type: other
   lifecycle: unknown
   owner: guests
+
+# Define the second entity: API for managing user data
 ---
 apiVersion: backstage.io/v1alpha1
 kind: API
@@ -26,7 +29,7 @@ spec:
   lifecycle: production
   owner: user:bjuvensjo
   definition:
-    $text: >
+    $text: |
       openapi: 3.0.0
       info:
         title: User Management API
@@ -74,6 +77,8 @@ spec:
                 type: string
               email:
                 type: string
+
+# Define the third entity: API for product catalog data
 ---
 apiVersion: backstage.io/v1alpha1
 kind: API
@@ -91,7 +96,7 @@ spec:
   lifecycle: production
   owner: user:bjuvensjo
   definition:
-    $text: >
+    $text: |
       type Product {
         id: ID!
         name: String!
@@ -104,4 +109,3 @@ spec:
         products: [Product]
         product(id: ID!): Product
       }
-
