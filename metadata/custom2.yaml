@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../metadata-schema-1.0.0.json
+apiVersion: tietoevry/api-management/1.0.0
+kind: API
+metadata:
+  name: ERAAccountsAPI_v_1
+  title: Self-Service Banking - Accounts API v1
+  # tags: <COULD NOT GENERATE VALUE - UPDATE/DELETE THIS LINE>
+  # links: <COULD NOT GENERATE VALUE - UPDATE/DELETE THIS LINE>
+spec:
+  type: openapi
+  visibility: external
+  lifecycle: retired
+  decommissioningDate: 2025-05-03
+  category: experience-api
+  apiProvidedBy: ebank-rest-api-dist
+  system: examples
+  owner: guests
+  definition: https://github.com/bjuvensjo/backstage-slask/blob/main/api/baz-api.yaml
