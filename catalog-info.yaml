@@ -1,3 +1,4 @@
+---
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
@@ -8,3 +9,99 @@ spec:
   type: other
   lifecycle: unknown
   owner: guests
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: user-management-api
+  description: API for managing user data in our platform.
+  owner: team-backend
+  tags:
+    - rest
+    - user-management
+  annotations:
+    github.com/project-slug: my-org/user-management-api
+spec:
+  type: openapi
+  lifecycle: production
+  owner: user:john_doe
+  definition:
+    $text: >
+      openapi: 3.0.0
+      info:
+        title: User Management API
+        version: 1.0.0
+        description: This API allows CRUD operations on user data.
+      paths:
+        /users:
+          get:
+            summary: List all users
+            responses:
+              '200':
+                description: A list of users.
+          post:
+            summary: Create a new user
+            requestBody:
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/User'
+            responses:
+              '201':
+                description: The created user.
+        /users/{id}:
+          get:
+            summary: Get a specific user by ID
+            parameters:
+              - name: id
+                in: path
+                required: true
+                schema:
+                  type: string
+            responses:
+              '200':
+                description: The user with the specified ID.
+              '404':
+                description: User not found.
+      components:
+        schemas:
+          User:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              email:
+                type: string
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: product-catalog-api
+  description: GraphQL API for accessing product catalog data.
+  owner: team-frontend
+  tags:
+    - graphql
+    - product
+  annotations:
+    github.com/project-slug: my-org/product-catalog-api
+spec:
+  type: graphql
+  lifecycle: production
+  owner: user:jane_doe
+  definition:
+    $text: >
+      type Product {
+        id: ID!
+        name: String!
+        description: String
+        price: Float!
+        category: String!
+      }
+
+      type Query {
+        products: [Product]
+        product(id: ID!): Product
+      }
+
