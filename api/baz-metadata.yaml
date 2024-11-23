@@ -2,11 +2,17 @@ apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
   name: baz
+  title: Baz
   description: Retrieve artist details
+  labels:
+    finods/decommissioning-date: 2025-05-03
+    finods/customer-visibility: external
+    finods/api-category: experience-api
 spec:
   type: openapi
-  lifecycle: production
-  owner: guests
+  lifecycle: retired
   system: examples
+  owner: guests
+  apiProvidedBy: ebank-rest-api-dist
   definition:
     $text: https://github.com/bjuvensjo/backstage-slask/blob/main/api/baz-api.yaml
