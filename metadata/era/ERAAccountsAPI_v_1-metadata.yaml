@@ -15,4 +15,4 @@ spec:
   apiProvidedBy: ebank-rest-api-dist
   system: examples
   owner: guests
-  definition: https://github.com/bjuvensjo/backstage-slask/blob/main/api/baz-api.yaml
+  definition: https://github.com/bjuvensjo/backstage-slask/blob/main/tmp/baz-api.yaml

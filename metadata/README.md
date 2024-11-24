@@ -1,0 +1,2 @@
+This folder contains API metadata in custom format.
+It can be discovered and parsed by Backstage thrugh a custom parser registered to be used by the Backstage catalog backend plugin, see [supporting-different-metadata-file-formats](https://backstage.io/docs/features/software-catalog/external-integrations#supporting-different-metadata-file-formats)

@@ -1,0 +1,1 @@
+This folder contains API metadata in standard backstage format
