@@ -9,11 +9,11 @@ metadata:
     - tag2
   links:
     - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/ERAAccountsAPI_v_1-metadata.yaml
-      title: title1
+      title: link1
       icon: icon1
       type: type1
     - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/ERAAccountsAPI_v_1-metadata.yaml
-      title: title2
+      title: link2
       icon: icon2
       type: type2
 spec:
