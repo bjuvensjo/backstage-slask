@@ -2,6 +2,7 @@
 apiVersion: tietoevry/api-management/1.0.0
 kind: API
 metadata:
+  namespace: adp
   name: ERAAccountsAPI_v_1
   title: Self-Service Banking - Accounts API v1
   tags:
