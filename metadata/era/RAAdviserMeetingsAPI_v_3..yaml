@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../metadata-schema-1.0.0.json
+# yaml-language-server: $schema=../../metadata-schema-1.0.0.json
+apiVersion: finods.com/1.0.0
+kind: API
+metadata:
+  name: ERAAdviserMeetingsAPI_v_3
+  title: Self-Service Banking - Adviser Meetings API v3
+  tags:
+    - tag1
+    - tag2
+  links:
+    - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/link1.html
+      title: link1
+      icon: icon1
+      type: type1
+    - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/link2.html
+      title: link2
+      icon: icon2
+      type: type2
+spec:
+  type: openapi
+  visibility: external
+  lifecycle: retired
+  decommissioningDate: 2025-01-01
+  category: experience-api
+  apiProvidedBy: era-ebank-external-services-dist
+  system: era
+  owner: <COULD NOT GENERATE VALUE - UPDATE/DELETE THIS LINE>
+  team: some team
+  definition:
+    $text: https://github.com/tietoevryfs/era-external-services-interface-spec/blob/main/specifications/rest/ERAAdviserMeetingsAPI_v_3.yaml
+  attachments:
+    - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/attachemtn1.yaml
+      title: link1
+    - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/attachemtn2.txt
+      title: link2
