@@ -1,5 +1,4 @@
-# yaml-language-server: $schema=../../metadata-schema-1.0.0.json
-# yaml-language-server: $schema=../../metadata-schema-1.0.0.json
+# yaml-language-server: $schema=../../../adp-api-mgmt-apis/schema/api-schema-1.0.0.json
 apiVersion: finods.com/1.0.0
 kind: API
 metadata:
@@ -25,8 +24,8 @@ spec:
   category: experience-api
   apiProvidedBy: era-ebank-external-services-dist
   system: era
-  owner: <COULD NOT GENERATE VALUE - UPDATE/DELETE THIS LINE>
-  team: some team
+  owner: anOwner
+  team: aTeam
   definition:
     $text: https://github.com/tietoevryfs/era-external-services-interface-spec/blob/main/specifications/rest/ERAAdviserMeetingsAPI_v_3.yaml
   attachments:
