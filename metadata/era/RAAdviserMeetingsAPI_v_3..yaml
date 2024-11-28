@@ -27,9 +27,9 @@ spec:
   owner: anOwner
   team: aTeam
   definition:
-    $text: https://github.com/tietoevryfs/era-external-services-interface-spec/blob/main/specifications/rest/ERAAdviserMeetingsAPI_v_3.yaml
+    $text: https://github.com/bjuvensjo/backstage-slask/blob/main/tmp/baz-api.yaml
   attachments:
-    - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/attachemtn1.yaml
+    - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/attachment1.yaml
       title: link1
-    - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/attachemtn2.txt
+    - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/attachment2.txt
       title: link2
