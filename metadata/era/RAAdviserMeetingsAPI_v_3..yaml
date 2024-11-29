@@ -22,7 +22,7 @@ spec:
   visibility: external
   lifecycle: retired
   decommissioningDate: 2025-01-01
-  category: experience-api
+  replacedBy: ERAAdviserMeetingsAPI_v_4
   apiProvidedBy: era-ebank-external-services-dist
   system: era
   owner: anOwner
