@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../../../adp-api-mgmt-apis/schema/api-schema-1.0.0.json
-apiVersion: finods.com/1.0.0
+apiVersion: finods.com/v1
 kind: API
 metadata:
   namespace: adp
@@ -25,7 +25,6 @@ spec:
   replacedBy: ERAAdviserMeetingsAPI_v_4
   apiProvidedBy: era-ebank-external-services-dist
   system: era
-  owner: anOwner
   team: aTeam
   definition:
     $text: https://github.com/bjuvensjo/backstage-slask/blob/main/tmp/baz-api.yaml
