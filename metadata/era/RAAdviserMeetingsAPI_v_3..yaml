@@ -30,6 +30,6 @@ spec:
     $text: /tmp/baz-api.yaml
   attachments:
     - url: /tmp/attachment1.yaml
-      title: link1
-    - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/attachment2.txt
-      title: link2
+      title: attachment1
+    - url: /tmp/attachment2.txt
+      title: attachment2
