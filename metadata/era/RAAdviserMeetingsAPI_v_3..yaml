@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../../adp-api-mgmt-apis/schema/api-schema-1.0.0.json
+# yaml-language-server: $schema=../../../adp-api-mgmt-apis/schema/api-schema-v1.json
 apiVersion: finods.com/v1
 kind: API
 metadata:
