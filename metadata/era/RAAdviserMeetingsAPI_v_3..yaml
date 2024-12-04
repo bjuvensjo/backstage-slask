@@ -27,7 +27,7 @@ spec:
   system: era
   team: aTeam
   definition:
-    $text: https://github.com/bjuvensjo/backstage-slask/blob/main/tmp/baz-api.yaml
+    $text: ../../tmp/baz-api.yaml
   attachments:
     - url: https://github.com/bjuvensjo/backstage-slask/blob/main/metadata/era/attachment1.yaml
       title: link1
