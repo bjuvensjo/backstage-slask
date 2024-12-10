@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="notify_subscriber">
+		<xs:annotation>
+			<xs:documentation>
+				This xsd describes Notify Subscribe messages from Customer system (CUS). 
+				An event is produced when a customer in CUS/iHub-Customer has been created or updated. 
+				Also changes in some customer related information will trigger an event.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:annotation>
+				<xs:documentation>
+					version = 2
+				</xs:documentation>
+			</xs:annotation>
+			<xs:sequence>
+				<xs:element name="messageType" type="Max70Text">
+					<xs:annotation>
+						<xs:documentation>
+							supported messagetypes:
+							'CUS.Centric' 	- 	when a customer has been created or changed, covers data in commonCustomerDetails, retailCustomerDetails.
+												and corporateCustomerDetailsa. Possible values in action: Create, Update, Close and Delete.
+							'CUS.AMLStatus'	- 	when AML-Status-code, AML-Status-code-last-change-date and/or AML-Renewal-Deadline-date in iHub Customer.
+												has been updated. Possible values in action: Update.
+							'CUS.Attribute'	-	when information coverd in CUSSAttributeService_Vnn_n has been changed. Possible values in action: Create, Update. 
+												Note that some information may also be delivered as structured fields in other services as well.
+							'CUS.Address' 	-	when an address registered on a customer has been changed. Possible values in action: Create, Update, Close
+							'CUS.IdentityMethod'-	When an identification-paper or identification method has been registered or changed on a customer.
+													Possible values in action: Create, Update, Close.
+													when action is create IdentityVerified will also be set to true on the customer.
+							'CUS.Group'		-	when a customer has been linked or delinked to a customer group. Used for Segmentation and executiveOfficer.
+												Possible values in action: Create, Update, Close.
+							'CUS.ForeignId'	-	when foreignId(TIN) has been changed on a customer. Possible values in action: Create, Close.
+							'CUS.Relation'		when a custom-relation has been changed. one event for the source-customer and one event for the target-
+												customer in the relation will be produced. Possible values in action: Create, Update, Close.
+							'CUS.Mifid'		-	when mifid-suitability-tests are changed on a customer. Possible values in action: Update.
+												Customers are by default initiatied with value: '01 - not classified' and this will not trigger any notification.
+							
+							Event engine:
+							'CUS_ADDRESS_V2' covers CUS.Address
+							'CUS_AML_STATUS_V2' coversCUS.AMLStatus
+							'CUS_ATTRIBUTE_V2' covers CUS.Attribute	
+							'CUS_CENTRIC_V2' covers	CUS.Centric
+							'CUS_FOREIGN_ID_V2' covers CUS.ForeignId	
+							'CUS_GROUP_V2' covers CUS.Group	
+							'CUS_IDENTITY_METHOD_V2' covers CUS.IdentityMethod	
+							'CUS_MIFID_V2' covers CUS.Mifid	
+							'CUS_RELATION_V2' covers CUS.Relation	
+							
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="versionNo" type="xs:int"/>
+				<xs:annotation>
+					<xs:documentation>
+							Version number of notify_subscriber header.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:element name="sourceApplication" type="Max70Text"/>
+					<xs:annotation>
+						<xs:documentation>
+							identification of the system that produced the event.  
+						</xs:documentation>
+					</xs:annotation>
+				<xs:element name="functionId" type="Max35Text"/>
+					<xs:annotation>
+						<xs:documentation>
+							TE internal information.
+						</xs:documentation>
+					</xs:annotation>
+				<xs:element name="orgId" type="Max35Text">
+					<xs:annotation>
+						<xs:documentation>
+							Official or technical organisationnumber,4 digit for norwegian banks.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="financeInstituteId" type="xs:long">
+					<xs:annotation>
+						<xs:documentation>
+							TE internal organisation Id.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="batchMassUpdating" type="Max1Text" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>
+							Y: notification created in batch. Consider to process the message seperated seperated from 
+							online-trafic
+							N: notification created in online-trafic.
+							not present value "N" will be used as default value in CIG-NS.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="logRef" type="Max36Text" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>
+							message id used for tracability
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="userId" type="Max8Text">
+					<xs:annotation>
+						<xs:documentation>
+							UserId that triggered the change in iHub.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="systemDate" type="xs:date"/>
+					<xs:annotation>
+						<xs:documentation>
+							system date of when the event was produced.
+						</xs:documentation>
+					</xs:annotation>
+				<xs:element name="dateTime" type="xs:dateTime"/>
+					<xs:annotation>
+						<xs:documentation>
+							datetime of when the event was produced.
+						</xs:documentation>
+					</xs:annotation>
+				<xs:element name="originatingSourceApplication" type="Max30Text" minOccurs="0"/>
+					<xs:annotation>
+						<xs:documentation>
+							sourceApplication of system or client that initiated the change in ihub.
+						</xs:documentation>
+					</xs:annotation>
+				<xs:element name="transactionID" type="Max36Text" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>
+							transactionId of the transaction in iHub.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="messageTypeDataString">
+					<xs:annotation>
+						<xs:documentation>
+							content of the envolop. specific to the messagetype.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="customerIntId" type="CuId">
+								<xs:annotation>
+									<xs:documentation>
+										internal id of the customer.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="customerNumber" type="Max35Text">
+								<xs:annotation>
+									<xs:documentation>
+										Customern-number of the customer. Should be national security-number or legal organisation number.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="customerType" type="Max1Text">
+								<xs:annotation>
+									<xs:documentation>
+										tells what kind of customer this is:
+										P : privat
+										N : corporate
+										B : sole proprietorship/Self employed person.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="actionType" type="Max8Text">
+								<xs:annotation>
+									<xs:documentation>
+										tells if the customer or occurence reported f.ex. an address has been created, updated or closed.
+										values: Create, Update, Close or Delete
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="keyFields">
+								<xs:annotation>
+									<xs:documentation>
+										additonal fields that cathegorize the occurences or information only relevant for a few message types.
+									</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Type" type="Max8Text" minOccurs="0">
+											<xs:annotation>
+												<xs:documentation>
+													For listing possible type-values CUSSTypeService_Vnn_n.typeList can be used.  
+													
+													For message type 'CUS.Address' the address-group-type will delivered in this field.
+													example values:
+													- Address-group:
+													- HOVED - main
+													- JOBB	- work
+													- ANNEN	- other
+													- FERIE	- holliday
+													
+													For message type 'CUS.Relation' the customer-relation-type will delivered in this field.
+													example values:
+													- RETHA	- real licencee (reelle rettighetshavere)
+													- RRHMA	- real licencee (reelle rettighetshavere bank registrert)
+													- DFIRM	- general manager (Daglig leder)
+													- SFIRM	- board member(Styremedlem)
+													- EKTEF	- spouse (ektefelle)
+													- EFIRM	- owner of company(firmaeier)
+													 
+													For message type 'CUS.AMLStatus', the customers applicable AML-Status-code be returned in this field:
+													example values:
+													- AVVIS - Avvist                          
+													- EDDAV - Avvist etter fornyelse          
+													- EDDU  - Under behandling etter fornyelse
+													- NVNOK - Godkjent ved navnesjekk         
+													- NVNU  - Under behandling etter navnesjekk
+													- ODDF  - Fornyelse                       
+													- ODDU  - Under behandling                
+													- OK    - Godkjent                        
+													- OKX   - Juridisk kunde uten AML-kontroll
+													
+													For message type 'CUS.IdentityMethod', the identification type will be delivered in this field.
+													example values:
+													- PASS	- Passport  (Pass)
+													- FØRER - Driving licens (Norske Førerkort utstedt fom. 1998)
+													- BNKID - Bank-Id 
+
+													For message type 'CUS.Group', the cutomer-group type will be delivered in this field.
+													example values:
+													- KANSV - executive Officer (Kundeansvarlig)
+													- PSEGM - customer segment (Kundesegment)
+
+
+													For message type 'CUS.Attribute', the attribute type will be delivered in this field.
+													example values:
+													- EPOST	- consent to email, Samtykke EPOST
+													- NETTB - consent to internettbak, Samtykke NETTB
+													- SMS   - consent to sms, Samtykke SMS
+													- AMLGT - last customer AML initiativ, Sist gjennomført kundetiltak
+												
+
+													For message type 'CUS.Mifid', the mifid-class will be delivered in this field.
+													example values:
+													- 01  	Not classified
+													- 02	None proffesional
+													- 03	Profesional
+												</xs:documentation>
+											</xs:annotation>
+										</xs:element>
+										<xs:element name="supplemtaryType" type="Max8Text" minOccurs="0">
+											<xs:annotation>
+												<xs:documentation>
+													For listing possible type-values CUSSTypeService_Vnn_n.typeList can be used.  
+
+													For message type 'CUS.Address' the address-channel-type will delivered in this field.
+													example values:	
+													- BESOK	- street/visiting  
+													- EPOST - e-mail 
+													- MOBIL - mobile 
+													- NETBF - internettbank corporate,  Nettbedrift
+													- NETTB - internettbank private,  Nettbank
+													- POST  - postal, Postadresse
+													- PSOK  - pager, Personsøker
+													- SWIFT - Swift 
+													- TLF   - phone, Telefon
+													- TLFSB - switchboard, Telefon sentralbord
+												</xs:documentation>
+											</xs:annotation>
+										</xs:element>
+										<xs:element name="previousCustomerNumber" type="Max35Text" minOccurs="0">
+											<xs:annotation>
+												<xs:documentation>
+													This elemt will  only be present when Customer-number value has been updated on the customer.
+													And is only relevant for messagetype: 'CUS.Centric' and 'action' = 'Update'.
+												</xs:documentation>
+											</xs:annotation>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="supplementaryDataString" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="sender" type="xs:string"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:simpleType name="CuId">
+		<xs:restriction base="xs:string">
+			<xs:length value="11"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Max70Text">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="70"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Max30Text">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="30"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Max35Text">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="35"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Max36Text">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="36"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Max1Text">
+		<xs:restriction base="xs:string">
+			<xs:length value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Max8Text">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="8"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

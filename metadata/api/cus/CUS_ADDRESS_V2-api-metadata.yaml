@@ -1,0 +1,23 @@
+# For usage instructions on this file, see https://wiki.finods.com/display/architecture/Instructions+for+generated+API+metadata+files
+# yaml-language-server: $schema=../../../schema/api-schema-v1.json
+apiVersion: finods.com/v1
+kind: API
+metadata:
+  name: CUS_ADDRESS_V2
+  title: CUS_ADDRESS_V2
+  # tags: <UPDATE THIS LINE IF RELEVANT>
+  # links: <UPDATE THIS LINE IF RELEVANT>
+spec:
+  type: asyncapi
+  visibility: external
+  lifecycle: live
+  # decommissioningDate: <UPDATE THIS LINE WHEN LIFECYCLE IS retired OR decommissioned>
+  # replacedBy: <UPDATE THIS LINE IF RELEVANT>
+  apiProvidedBy: cus-ihub-kunde-dist
+  system: cus
+  # team: <UPDATE THIS LINE IF RELEVANT>
+  definition:
+    $text: /data/api/cus/CUS_ADDRESS_V2/CUS_ADDRESS_V2.yaml
+  attachments:
+  - url: /data/api/cus/CUS_ADDRESS_V2/CUS_ADDRESS_V2.xsd
+    title: CUS_ADDRESS_V2.xsd

@@ -27,9 +27,9 @@ spec:
   system: era
   team: aTeam
   definition:
-    $text: /tmp/baz-api.yaml
+    $text: /data/baz-api.yaml
   attachments:
-    - url: /tmp/attachment1.yaml
+    - url: /data/attachment1.yaml
       title: attachment1
-    - url: /tmp/attachment2.txt
+    - url: /data/attachment2.txt
       title: attachment2

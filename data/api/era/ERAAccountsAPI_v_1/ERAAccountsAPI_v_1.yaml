@@ -1,0 +1,3060 @@
+openapi: 3.0.2
+info:
+  title: Self-Service Banking - Accounts API v1
+  termsOfService: "https://baas.api-portal.tietoevry.com/adp-portalclient/termsconditions"
+  license:
+    name: '© Tietoevry. All rights reserved. This code/information is protected by national and international law and may not be used, copied, amended, compiled, decompiled, transferred etc. without the explicitly written prior consent from Tietoevry. Any use in violation of the said will be prosecuted and compensation will be claimed.'
+  version: '1.1.6'
+  x-evry:
+    summary: Services related to accounts as listing accounts, balances and details, handling authorization on accounts, terminating accounts...
+  contact:
+    name: Tietoevry Support Financial Services
+    email: nettbank.bf@evry.com
+  description: |-
+
+    # Introduction
+
+    Services related to accounts. Displays details and makes it possible to add authorized users (disponent) and terminate accounts,
+     and release Rental Deposit Savings (depositumskonto).
+
+    To create an account use /orders services.
+
+    ## Account balance
+    **GET /accounts** service will return a lot of details on an account including the balance.
+    If you need to update the balance later in a session, specific balance services should be used:
+
+        GET /accounts/balances
+        GET /accounts/{accountid}/balance
+    These balance services are more lightweigth and are tuned to just deliver balance updates. Typically you would call them after a transfer.
+
+
+    ## Account details
+    The account details are divided in the following sections
+
+    - General information
+    - Guarantee account details
+    - Incoming cross-border payments
+    - Account stakeholders
+    - Amounts
+    - Interest and fees
+      - Deposit interest
+      - Ordinary credit line
+      - Additional credit line
+      - Overdraft
+      - Fees
+
+    The account details services displays accounts from old and new core backend.
+
+
+
+    ## Authorized User
+
+    The self service administration of authorized users (disponent) on accounts for private internet banking.
+    An authorized user will get payment and transfer right on the account as well as being able to view transactions, documents and bank messages for the account.
+
+    ### Usage
+
+    To get the union of the current customer's own accounts, and accounts owned by others that the current customer has some authorization on call:
+
+        GET /accounts/authorizedcustomers
+
+    To get list of customers authorized for account identified by {accountid} use:
+
+        GET /accounts/{accountid}/authorizedcustomers
+
+    To create new authorized user for account call:
+
+        POST /accounts/{accountid}/authorizedcustomers
+
+    To create agreement document related to authorized customer use:
+
+        POST /accounts/{accountid}/authorizedcustomers/documents
+
+    To update authorized user information call:
+
+        PUT /accounts/{accountid}/authorizedcustomers
+
+    To remove authorized user use:
+
+        DELETE /accounts/{accountid}/authorizedcustomers
+
+    To obtain disponent address information on which card can be ordered use
+    link from property ```links.contactInfo``` from response of ```GET /accounts/authorizedcustomers``` or ```GET /accounts/{accountid}/authorizedcustomers```.
+
+    ## Change Log
+      <table>
+        <tr>
+          <th align="left">Version</th>
+          <th align="left">Change Description</th>
+        </tr>
+        <tr>
+          <td>v1.0.0</td>
+          <td>Initial version</td>
+        </tr>
+        <tr>
+          <td>v1.1.0</td>
+          <td>Added query parameter to service DELETE /accounts/{accountid}/authorizedcustomers, as replacement for payload now deprecated.</td>
+        </tr>
+        <tr>
+          <td>v1.1.1</td>
+          <td>Add partial response to GET /accounts</td>
+        </tr>
+        <tr>
+          <td>v1.1.2</td>
+          <td>Optional, licensed value properties.koCode is added to GET /accounts and GET /accounts/{accountid}.
+          </td>
+        </tr>
+        <tr>
+          <td>v1.1.3</td>
+          <td>Introduced endpoint: GET /accounts/{accountid}/authorizedcustomers/{customerid}/contactinfo.<br/>
+              Added property links.contactInfo for authorized customers.
+          </td>
+        </tr>
+        <tr>
+          <td>v1.1.4</td>
+          <td>GET /accounts/{accountid}/loandetails enum property payment.paymentMethod has new value 'ext_invoice'.</td>
+        </tr>
+        <tr>
+          <td>v1.1.5</td>
+          <td>PUT /accounts/{accountid}/release HTTP codes fixed, examples added.</td>
+        </tr>
+        <tr>
+          <td>v1.1.6</td>
+          <td>
+            Added optional boolean queryparameter minimal to GET /accounts/{accountid}/loandetails.<br/>
+          </td>
+        </tr>
+      </table>
+
+paths:
+  /accounts/{accountid}/name:
+    put:
+      tags:
+        - Accounts
+      operationId: accountAlias
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountAlias'
+        required: true
+        description: Key/value pair with the name to be set.
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: string
+                example: Not allowed to update account name
+      summary: Update CPS Account Alias
+      description: |-
+        Update the name of account referenced by {accountid}.
+        This updates the alias in CPS, and the name will be associated with the current agreement.
+        The name will not be visible to users of the same account on other agreements.
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+        - User must have sufficient administrative permissions for the account.
+
+        Valid context:
+        - Corporate
+    parameters:
+      - schema:
+          $ref: '#/components/schemas/AccountId'
+        name: accountid
+        in: path
+        required: true
+  /accounts/{accountid}/close:
+    put:
+      operationId: accountClose
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountTerminate'
+        required: true
+        description: ''
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json: {}
+      tags:
+        - Accounts
+      description: |-
+        Close the saving or spending account referenced by {accountid}.
+        The operation requires signing.
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+        - User must have permissions to close the account.
+
+        Valid context:
+        - Private
+      summary: Close account
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/release:
+    put:
+      operationId: startRdsaReleaseProcess
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartRdsaReleaseProcessResponse'
+              examples:
+                Start RDSA release process:
+                  $ref: '#/components/examples/put-account-id-release'
+      tags:
+        - Accounts
+      description: |-
+        Initiate release process for the Rental Deposit Savings (RDS) account identified by {accountid}.
+
+        Response is an empty object {}, if the signing of releasing of the RDS account is disabled.
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Start RDSA release process
+    delete:
+      operationId: cancelRdsaReleaseProcess
+      responses:
+        '204':
+          description: OK
+          content:
+            application/json: {}
+      tags:
+        - Accounts
+      description: |-
+        Cancel the process of releasing deposit amount from Rental Deposit Savings (RDS) account identified by {accountid}.
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Cancel Release
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+  /accounts/{accountid}:
+    get:
+      operationId: getAccount
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accounts'
+      tags:
+        - Accounts
+      description: |-
+        Get information about the account identified by {accountid}.
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get Account
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+
+  /accounts/{accountid}/balance:
+    get:
+      operationId: getAccountBalance
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountBalance'
+      tags:
+        - Accounts
+      description: |-
+        Get the balance of the account identified by {accountid}.
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get Account Balance
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/balances:
+    get:
+      operationId: getAccountBalances
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountBalance'
+      tags:
+        - Accounts
+      description: |-
+        Get the balance of all deposit accounts for the current customer.
+
+
+        Prerequisites:
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get Accounts Balances
+
+  /accounts/{accountid}/details/freewithdrawallimitations:
+    get:
+      operationId: getAccountDetailsFreeWithdrawalLimitations
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountDetailsFreeWithdrawals'
+      tags:
+        - Accounts
+      description: |-
+        Get free withdrawal limit details for the deposit account identified by {accountid}.
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get withdrawal limits
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts:
+    get:
+      summary: Get All Customer Accounts
+      operationId: getAccounts
+      parameters:
+        - name: cache
+          in: query
+          description: By adding parameter cache=refresh you are ensured to get fresh data from backend
+          schema:
+            type: string
+          example: refresh
+        - name: without_balance
+          in: query
+          description: Allows to get accounts without additional calls to backend for updating balances if this information is not required.
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Account list with updated balances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponseAccounts'
+        '206':
+          description: Account list without balances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponseAccounts'
+      tags:
+        - Accounts
+      description: |-
+        Get list of all accounts for the customer.
+
+
+        Prerequisites:
+
+        Valid Context:
+        - Private, Corporate
+
+  /accounts/{accountid}/bsudetails:
+    get:
+      summary: Get BSU Account Details
+      operationId: getBsuDetails
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BsuDetails'
+      tags:
+        - Accounts
+      description: |-
+        Get details for the BSU account identified by {accountid}.
+
+        Invoformation includes:
+        - Total deposited amount
+        - Total interest
+        - Accumulated tax reduction current year
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/details:
+    get:
+      operationId: getDetails
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountDetails'
+      tags:
+        - Accounts
+      description: |-
+        Get details for deposit account identified by {accountid}.
+        Account may be in local or foreign currency.
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get account details
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/expenses:
+    get:
+      operationId: getExpenses
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expenses'
+      tags:
+        - Accounts
+      description: |-
+        Get expenses on deposit account or currency account.
+
+        Supports Core Classic and New Core.
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get expenses on an account
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/guaranteedetails:
+    get:
+      operationId: getGuaranteeDetails
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuaranteeDetails'
+      tags:
+        - Accounts
+      description: |-
+        Get detail information for a guarantee account.
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+        - Customer has access permissions on the account.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get details on an guarantee account
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/immediatefees:
+    get:
+      operationId: getImmediateFees
+      parameters:
+        - name: amount
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountImmediateFees'
+      tags:
+        - Accounts
+      description: |-
+        Calculate the fee for an immediate payment for the given amount.
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Calculate immediate fee
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/loandetails/interesthistory:
+    get:
+      operationId: getInterestHistory
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponseInterestHistory'
+      tags:
+        - Accounts
+      description: |-
+        Get historic interest rates for a loan account.
+
+        Supports Core Classic and cLA.
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get historic interest rates
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/interests:
+    get:
+      operationId: getInterests
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterestsDepositAccount'
+      tags:
+        - Accounts
+      description: |-
+        Get account interests
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Get account interest
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/linkedservices:
+    get:
+      operationId: getLinkedServices
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponseLinkedService'
+      tags:
+        - Accounts
+      description: |-
+        Get linked services
+        Returns a list of add on linked services (agreements) connected to the account. The add on to the account can be 'automatic transfer agreement', 'a debit card agreement', 'granted credit agreement' and more
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Get agreements and linked services to an account
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/loandetails:
+    get:
+      operationId: getLoanDetails
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanDetails'
+        '403':
+          description: Forbidden
+      tags:
+        - Accounts
+      description: |-
+        Get loan details for loan account.
+
+        Supports both Loan Classic and cLA.
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get loan details for loan account
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+      - name: minimal
+        in: query
+        description: By adding parameter minimal=true you only get basic information about the loan.
+        schema:
+          type: boolean
+
+  /accounts/{accountid}/payments:
+    get:
+      operationId: getPayments
+      parameters:
+        - name: time
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Time'
+          description: Specify if request is for future or past payments
+        - name: from_date
+          in: query
+          schema:
+            type: string
+            format: date
+            example: '2017-07-20'
+        - name: to_date
+          in: query
+          schema:
+            type: string
+            format: date
+            example: '2017-07-27'
+        - name: from_amount
+          in: query
+          schema:
+            type: number
+          description: Only supported for PWH
+        - name: to_amount
+          in: query
+          schema:
+            type: number
+          description: Only supported for PWH
+        - name: currency
+          in: query
+          schema:
+            type: string
+            pattern: '^[A-Z]{3}'
+            example: NOK
+          description: Only supported for PWH
+        - name: creditorAccount
+          in: query
+          schema:
+            type: string
+            maxLength: 34
+          description: Only supported for PWH
+        - name: creditorName
+          in: query
+          schema:
+            type: string
+            maxLength: 140
+          description: Only supported for PWH
+        - name: index
+          in: query
+          schema:
+            type: integer
+            format: int32
+          description: Pagination - index of first element to return
+        - name: number
+          in: query
+          schema:
+            type: integer
+            format: int32
+          description: Pagination - number of elements to return
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponseWithPaginationPayment'
+      tags:
+        - Accounts
+      description: |-
+        Get all future or past payments, depending on time parameter.
+        Payment types include
+        - Payments
+        - Direct debits (avtalegiro)
+        - Stopped payments
+        - Foreign payments (utenlandsbetaling)
+        - Transfers
+        - Recurring transfers / payments
+
+        No filtering support. Client local filtering required.
+
+        Query parameters index and number is only relevant for banks with PIN as backend.
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Get payments
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/psd2:
+    get:
+      operationId: getPsd2Information
+      parameters:
+        - name: openBankingAccountFlagFilter
+          in: query
+          schema:
+            $ref: '#/components/schemas/OpenBankingAccountFlag'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponsePsd2Information'
+      tags:
+        - Accounts
+      description: |-
+        Get the AISP and PISP settings for customer's corporate accounts.
+
+
+        Prerequisites:
+        - Current user has access to read settings on the corporate accounts.
+
+        Valid Context:
+        - Corporate
+      summary: Account PSD2 Information
+    put:
+      operationId: updatePsd2Information
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountsPsd2InformationUpdateRequest'
+            examples: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponsePsd2Information'
+      tags:
+        - Accounts
+      description: |-
+        Update the AISP and PISP settings for customer's corporate accounts.
+
+        Prerequisites:
+        - Current user has access to change settings on the corporate accounts.
+
+        Valid Context:
+        - Corporate
+      summary: Update PSD2 Information
+
+  /accounts/{accountid}/stakeholders:
+    get:
+      operationId: getStakeholders
+      responses:
+        '200':
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponseStakeHolder'
+      tags:
+        - Accounts
+      description: |-
+        Get a list of stakeholders for the account identified by {accountid}.
+        The stakeholders may have different roles.
+
+        Possible values for role is bank dependent and include
+        - disp - The disposal role - the customer have disposal of the account.
+        - eier - The owner role - the customer owns the account.
+        - insyn - The accessible role - the customer have access to view the account.
+        - kauksj - The guarantor role - the customer is guarantor on the loan/account.
+        - kredi - The creditor role - the customer is creditor on the account.
+        - mede - The co-owner role - the customer is co-owner on the account.
+        - samsk - The co-debtor role - the customer is co-debtor on the loan.
+        - siktst - The security role - the customer provides security for the loan/account.
+        - tilsk - The addressee role - the customer have access to account statements on the account.
+        - verge - The custody role - the customer have guardianship of the account.
+        - unknown - The role returnded from the backend systems has no defined mapping in this service.
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Get Stakeholders
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/terminate:
+    get:
+      operationId: getTerminateLink
+      parameters:
+        - name: accountNumber
+          in: query
+          required: true
+          schema:
+            pattern: '\d{11}'
+            type: string
+      responses:
+        '200':
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminateDetails'
+      tags:
+        - Accounts
+      description: |-
+        Obtain an account termination link for the account specified.
+
+        Prerequisites:
+
+        Valid Context:
+        - Private
+      summary: Get a link to account termination
+
+  /accounts/{accountid}/validateclosing:
+    get:
+      operationId: getValidateClosingStatus
+      responses:
+        '200':
+          description: Validation Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateAccountClosingDetails'
+      tags:
+        - Accounts
+      description: |-
+        Evaluates if the account identified by {accountid} can be closed.
+        The decision is identifed by the "allowClosing" property of the response.
+
+        Checks include:
+        - User is allowed to close account (ownership, age, etc.)
+        - Pending payments
+        - Reservations
+        - Payment agreements
+        - Bank configuration
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Validate Closing
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/terminate:
+    put:
+      operationId: scheduleAccountTermination
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountTerminate'
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json: {}
+      tags:
+        - Accounts
+      description: |-
+        Terminate the account identified by {accountid}.
+
+        This operation schedules an account for termination. The termination process itself will be performed the first bank day after the account is added to the schedule.
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+        - User is account owner
+
+        Valid Context:
+        - Private, Corporate
+      summary: Terminate Account
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/authorizedcustomers:
+    get:
+      operationId: getAccountAuthorizedCustomersList
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponseAccountAuthorizedCustomers'
+      tags:
+        - Accounts
+      description: |-
+        Get the union of the current customer's own accounts, and accounts owned by others that the current customer has some authorization on.
+
+        For the cusomer's own account information about other customers with authorizations on the accounts is included.
+        For other customer's accounts information about the current customer's authorization are included.
+
+
+        Prerequisites:
+
+        Valid Context:
+        - Private
+      summary: Get Authorized Customers
+  /accounts/{accountid}/authorizedcustomers:
+    get:
+      tags:
+        - Accounts
+      operationId: getAuthorizedCustomers
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResponseAuthorizedCustomer'
+      description: |
+        Get list of customers authorized for account identified by {accountid}.
+        This includes and is limited to owner and disposal roles (EIER, DISP).
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Get list of customers authorized for account
+    put:
+      operationId: updateAuthorizedCustomer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAuthorizedCustomerRequest'
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json: {}
+      tags:
+        - Accounts
+      description: |-
+        Update access date for authorized customer for the user account
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Update access date for authorized customer
+    post:
+      operationId: addAuthorizedCustomer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddAuthorizedCustomerRequest'
+      responses:
+        '204':
+          description: Created
+          content:
+            application/json: {}
+      tags:
+        - Accounts
+      description: |-
+        Add authorized customers for account.
+        Given customer will get DISPOSAL role on the account owned by the logged in user.
+
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Add authorized customer
+    delete:
+      operationId: deleteAuthorizedCustomer
+      parameters:
+        - name: role_owner_customer_number
+          in: query
+          description: Customer number (SSN) for the person that will have its DISPOSAL role removed from the account.
+          schema:
+            type: string
+          example: '17108403705'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAuthorizedCustomerRequest'
+
+      responses:
+        '204':
+          description: No Content
+          content:
+            application/json: {}
+      tags:
+        - Accounts
+      description: |-
+        Remove authorized customer from the account.
+        DISP role on the account identified by {accountid} will be removed from the specified customer.
+        Request payload body is now deprecated. Choose to use query parameter role_owner_customer_number instead with the disposal customer's SSN number as value.
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private
+      summary: Remove authorized customer
+
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+
+  /accounts/{accountid}/authorizedcustomers/{customerid}/contactinfo:
+    get:
+      tags:
+        - Accounts
+      operationId: getAuthorizedCustomersContactInfo
+      parameters:
+        - name: accountid
+          in: path
+          description: Encrypted account identifier.
+          required: true
+          schema:
+            $ref: '#/components/schemas/AccountId'
+        - name: customerid
+          in: path
+          description: Encrypted customer number, usually SSN.
+          required: true
+          schema:
+            $ref: '#/components/schemas/CustomerId'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizedCustomersContactInfoResponse'
+              examples:
+                Get disponent contact information:
+                  $ref: '#/components/examples/get-account-authorizedcustomers-contactinfo'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+              examples:
+                Session has timed out:
+                  $ref: '#/components/examples/error-session-timed-out'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+              examples:
+                Not allowed with unencrypted ID:
+                  $ref: '#/components/examples/error-forbidden-unencrypted-id'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+      description: |
+        Get contact information of customer identified by {customerid} authorized for account identified by {accountid}.
+
+        Prerequisites:
+        - Account ID and CustomerID from account list - GET /accounts/{accountid}/authorizedcustomers request.
+
+        Valid Context:
+        - Private
+      summary: Get contact information of authorized customer.
+
+
+  /accounts/{accountid}/authorizedcustomers/documents:
+    post:
+      operationId: generateAuthorizedCustomerDocument
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizedCustomerDocumentRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizedCustomerDocumentResponse'
+      tags:
+        - Accounts
+      description: |-
+        Creates agreement document related to authorized customer.
+
+        Prerequisites:
+        -
+
+        Valid Context:
+        - Private
+      summary: Creates agreement document related to authorized customer.
+    parameters:
+    - name: accountid
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/AccountId'
+  /accounts/{accountid}/authorizedcustomers/validatecustomername:
+    post:
+      operationId: validateCustomerName
+      parameters:
+      - name: accountid
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/AccountId'
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ValidateCustomerNameRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateCustomerNameResponse'
+      tags:
+        - Accounts
+      description: |-
+        Service to validate a customer name before giving authorization to the account
+
+        Prerequisites:
+        - Account ID from account list - GET /accounts request.
+
+        Valid Context:
+        - Private, Corporate
+      summary: Validate customer name before giving authorization.
+
+components:
+  schemas:
+    EraError:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '5884127160'
+        system:
+          type: string
+          example: ERA-MAIN
+        status:
+          type: integer
+          example: 400
+        code:
+          type: string
+          example: BAD_REQUEST
+        message:
+          type: string
+          example: Error message appears here
+    SecurityToken:
+      required:
+        - token
+        - tokenType
+      type: object
+      properties:
+        tokenType:
+          type: string
+          example: EvrySO
+        token:
+          type: string
+      description: Security token used to authenticate the user when logging in to the REST ESB
+    UserSession:
+      title: x-evry-esb-usersession
+      required:
+        - authLevel
+        - bankOrgID
+        - institution
+        - client
+        - created
+        - credentialType
+        - keyData
+        - loginContext
+        - sessionID
+        - userID
+        - customerID
+        - readOnly
+      description: Client session received by REST-ESB
+      example:
+        authLevel: 8
+        bankOrgID: ''
+        institution: ''
+        client:
+          clientProperties:
+            ip: ''
+            userAgent: ''
+        created: ''
+        credentialType: ''
+        keyData: ''
+        loginContext: ''
+        sessionID: ''
+        userID: ''
+        customerID: ''
+        bankEmployeeId: ''
+        readOnly: false
+      type: object
+      properties:
+        authLevel:
+          type: number
+          description: The authentication level of the token. Value indicating the strength of the authentication that have been performed of the user.
+          example: 8
+        bankOrgID:
+          type: string
+          description: The orgId of the bank. If SO is used this value will be the SO key used to sign the object.
+          example: '408'
+        institution:
+          type: string
+          description: The content of the UserId field in the SO. Should contain the origId of the bank if bank has orgId over 4 digit.
+          example: '35803100'
+        client:
+          type: object
+          properties:
+            ip:
+              type: string
+              description: The IP of the user.
+              example: 146.213.128.134
+            userAgent:
+              type: string
+              description: The userAgent of the user.
+              example: 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36'
+        created:
+          type: string
+          description: Contains UTC timestamp in milliseconds since 1970.
+          example: '1444806612709'
+        credentialType:
+          type: string
+          description: Contains a string identifying the credentials the user used to logon to the REST ESB with for example EvrySO.
+          example: EvrySO
+        keyData:
+          type: string
+          description: Contains 128 bytes of securely generated random data that is base64 encoded. This data is available to the REST-Application in order to be able to use session based cryptographic primitives.
+          example: bErL/6xIB6nc1TXIdMxmSwJ8ftDTtVqnP1VK+xBhTWSyLpMls8HMv7ws7muvxwKxBVsxyze1cUKL9HLLGphhHMxYS6C4x4TcEyyAo7Huk6h/3ra55kxGFYD8qwfneF4FCWKtoN7jyeG6VXDI/YlGkXLYaKlFDnC6pDoa9yVJ188=
+        loginContext:
+          type: string
+          description: "Indicate if the user is establishing a session from a corporate or private context.\n*\tSet to private if user is establishing a session from a private context.\n*\tSet to corporate if the user is establishing a session from a corporate context.\n*\tIf REST-ESB is unable to determine the context the REST-ESB will by default set private.\n"
+          example: private
+        sessionID:
+          type: string
+          description: The ID of the session on the REST-ESB.
+          example: c1aef843-fc16-484a-9657-06388292ac1e
+        userID:
+          type: string
+          description: The LogonId/Alias of the user.
+          example: '17108403705'
+        customerID:
+          type: string
+          description: The SSN / Fake SSN if available (Core Customer Number).
+          example: '17108403705'
+        bankEmployeeId:
+          type: string
+          description: Optional field that contains the id a bank employee when a bank employee is doing establishing a session on behalf of a customer.
+          example: '17108403705'
+        readOnly:
+          type: boolean
+          description: Field that indicates if this session is a read only session.
+          example: false
+    AccountAlias:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          maxLength: 30
+          minLength: 0
+          type: string
+      x-examples:
+        example-1:
+          name: New Account Name
+    Account:
+      type: object
+      description: Account information
+      properties:
+        number:
+          type: string
+        format:
+          type: string
+          enum:
+            - bban
+            - iban
+          default: bban
+      required:
+        - number
+    AccountTerminate:
+      type: object
+      properties:
+        orgId:
+          type: string
+        customerId:
+          type: string
+        loginContext:
+          type: string
+          enum:
+            - private
+            - corporate
+        account:
+          $ref: '#/components/schemas/Account'
+        offsetAccount:
+          $ref: '#/components/schemas/Account'
+        errorAttempts:
+          type: integer
+          format: int32
+      description: |-
+        The account to terminate.
+
+        Details:
+        - offsetAccount - The account that receives the termination amount
+    AddAuthorizedCustomerRequest:
+      required:
+        - roleOwnerCustomerNumber
+      type: object
+      properties:
+        roleOwnerCustomerNumber:
+          type: string
+        roleValidFrom:
+          type: string
+          format: date
+      description: Customer number of the user that will be given DISPOSAL role on this account, and from which date.
+    DeleteAuthorizedCustomerRequest:
+      required:
+        - roleOwnerCustomerNumber
+      type: object
+      properties:
+        roleOwnerCustomerNumber:
+          type: string
+      description: Customer number of the user that will have its DISPOSAL role removed from this account.
+    UpdateAuthorizedCustomerRequest:
+      required:
+      - roleOwnerCustomerNumber
+      - roleValidFrom
+      type: object
+      properties:
+        roleOwnerCustomerNumber:
+          type: string
+        roleValidFrom:
+          type: string
+          format: date
+      description: Start date and customer number of the user that will be given DISPOSAL role on this account.
+    AuthorizedCustomerDocumentResponse:
+      type: object
+      properties:
+        content:
+          type: string
+    AuthorizedCustomerDocumentRequest:
+      required:
+      - authorizedUserCustomerId
+      type: object
+      properties:
+        documentType:
+          type: string
+          enum:
+          - efue
+        authorizedUserCustomerId:
+          type: string
+        validFromDate:
+          type: string
+          format: date
+    AccountBalance:
+      type: object
+      description: Account balances details.
+      properties:
+        accountIdReference:
+          type: string
+        availableBalance:
+          type: number
+          description: 'the balance available for the customer to use at this moment][not present for loan accounts, guarantee accounts and collateral/guarantor accounts'
+        accountingBalance:
+          type: number
+          description: registered balance on the account at this moment (not present for guarantee accounts)
+        availableLocalCurrencyBalance:
+          type: number
+          description: available balance in NOK (present only if properties.type is currency-account)
+        accountingLocalCurrencyBalance:
+          type: number
+          description: registered balance in NOK (present only if properties.type is currency-loan or currency-account)
+        guaranteeAmount:
+          type: number
+          description: the amount which the guarantoor is responsible for (present only if guarantee account or collateral/guarantor account)
+        creditLine:
+          type: number
+          description: granted credit on the account
+        blockedAmount:
+          type: number
+          description: blocked amount on the account
+        guarantorAmount:
+          type: number
+          description: deprecated
+        localCurrencyCreditLine:
+          type: number
+          description: local currency granted credit on the account
+        localCurrencyBlockedAmount:
+          type: number
+          description: local currency blocked amount on the account
+        totalReservedAmount:
+          type: number
+          description: 'money on it''s way out of the account, not available to the customer'
+        localCurrencyTotalReservedAmount:
+          type: number
+          description: 'local currency money on it''s way out of the account, not available to the customer'
+        originalCurrencyCode:
+          type: string
+          description: 'the orginal currency code of the account'
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HttpHateoasLink'
+          properties:
+            self:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    AccountName:
+      type: object
+      properties:
+        alias:
+          type: string
+          description: aliasname set in netbank
+        accountDescription:
+          type: string
+          description: |-
+            account name set in Sales and Customer, only available for accounts in old Core
+
+            Only applicable for private context
+        accountProductName:
+          type: string
+          description: account product name in core system
+      description: attribute holding different account names
+    AccountOwner:
+      type: object
+      properties:
+        name:
+          type: string
+          description: name on account owner
+          example: Ola Nordmann
+        customerNumber:
+          type: string
+          description: SSN on account owner
+          example: '01010112345'
+      description: owner of this account
+    AccountProperties:
+      type: object
+      properties:
+        currencyCode:
+          type: string
+          description: currency code for account
+          example: NOK
+        status:
+          type: string
+          description: 'status for account (ACTIVE,TERMINATED,BLOCKEDWITHDRAWAL,BLOCKED,BLOCKEDDEPOSIT,TOBETERMINATED,UNKNOWN)'
+          example: ACTIVE
+        type:
+          type: string
+          description: 'type of account (estatecredit,stocksavings,surety,guarantee,loan,currency-loan,currency-account,spending,saving,bsu,taxwithdraw,rds,client-account,unknown)'
+          example: spending
+        accountCreateDate:
+          type: string
+          description: |-
+            Time the account was created
+
+            Epoch timestamp (number of milliseconds since January 1st, 1970, UTC)
+          format: date-time
+        accountClosed:
+          type: boolean
+          description: |-
+            Time the account was closed
+
+            Epoch timestamp (number of milliseconds since January 1st, 1970, UTC)
+          example: false
+        external:
+          type: string
+          description: |-
+            when set, indicates that the account is in another bank (foreign_domestic, foreign_crossborder)
+
+            Only applicable for corporate context)
+          example: foreign_domestic
+          enum:
+            - foreign_domestic
+            - foreign_crossborder
+        bankId:
+          type: string
+          description: 'applicable for foreign_domestic external account type only, and if set it shows the bank id where the account belongs to'
+          example: '9996'
+        rentalObjectAddress:
+          type: string
+          description: only present if type is RDSA
+        balanceUpdateTime:
+          type: string
+          description: |-
+            time of last CPS balance update
+
+            Only applicable for corporate context)
+          format: date-time
+        numberOfApprovers:
+          type: integer
+          description: |-
+            number of required approvers
+
+            Only applicable for corporate context)
+          format: int64
+          example: 2
+        koCode:
+          type: string
+          description: |-
+            Account Group Number. Called also as KO-code (kontogruppeopplysninger).
+
+            Value is available only in the OLD_CORE system and only if bank ordered license for this property.
+
+            KO-codes values will not be migrated to NEW_CORE.
+          example: "3504014000"
+      description: object holding account properties
+    AccountRights:
+      type: object
+      properties:
+        accessPermission:
+          type: boolean
+          description: indicates if user has accessright on account
+        paymentFrom:
+          type: boolean
+          description: indicates if user has right to use this account as from-account for payments
+        transferFrom:
+          type: boolean
+          description: indicates if user has right to use this account as from-account for transfers
+        transferTo:
+          type: boolean
+          description: indicates if user has right to use this account as to-account for transfers
+        createPaymentAgreement:
+          type: boolean
+          description: indicates if user has right to use this account as from-account for payment agreements
+        createAutopaymentAgreement:
+          type: boolean
+          description: indicates if user has right to use this account as from-account for autopayment agreements
+        approve:
+          type: boolean
+          description: only present for corporate context
+        salary:
+          type: boolean
+          description: 'only present for corporate context (when true, the user can view salary payments from this account)'
+        repaymentPlan:
+          type: boolean
+          description: 'only present for loan accounts (type="LOAN"), set to ''true'' if the bank has Repayment Plan function enabled, ''false'' otherwise (see business logic)'
+      description: Account Rights
+    Accounts:
+      type: object
+      description: Account details.
+      properties:
+        id:
+          type: string
+          description: basic (national) bank account number (same as attribute bban)
+          example: '94850603639'
+        accountId:
+          $ref: '#/components/schemas/AccountId'
+        bban:
+          type: string
+          description: basic (national) bank account number
+          example: '94850603639'
+        iban:
+          type: string
+          description: international bank account number
+          example: NO1594850603639
+        customerRole:
+          type: string
+          description: 'customer role for this account (owner,disposal,collateral,guarantor,unknown,coowner,codebtor,guardian,access,addressee,creditor)'
+          example: owner
+          enum:
+            - owner
+            - disposal
+            - collateral
+            - guarantor
+            - unknown
+            - coowner
+            - codebtor
+            - guardian
+            - access
+            - addressee
+            - creditor
+            - contact
+        owner:
+          $ref: '#/components/schemas/AccountOwner'
+        displayName:
+          type: string
+          description: to be used as account name in any account list
+        accountName:
+          $ref: '#/components/schemas/AccountName'
+        properties:
+          $ref: '#/components/schemas/AccountProperties'
+        accountBalance:
+          $ref: '#/components/schemas/AccountBalance'
+        specialAccountConditions:
+          $ref: '#/components/schemas/SpecialAccountConditions'
+        rights:
+          $ref: '#/components/schemas/AccountRights'
+        transactionLimits:
+          $ref: '#/components/schemas/TransactionLimits'
+        links:
+          type: object
+          description: |
+            Attribute holding the collection of links which may be returned from this method.
+          additionalProperties:
+            $ref: '#/components/schemas/HttpHateoasLink'
+          properties:
+            self:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            details:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            accountrights:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            detailsclassic:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            balance:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            freewithdrawallimitations:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            transactions:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            transactionsSearch:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            payments:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            releaseRentalDeposit:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            releaseRentalDepositWithSigning:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            immediatefees:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            interests:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            expenses:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            name:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            authorizedcustomers:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            authorizedcustomervalidatename:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            authorizedcustomerdocuments:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            stakeholders:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            linkedservices:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            validateclosing:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            loandetails:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            loanrepaymentplan:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            bsudetails:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            guaranteedetails:
+              $ref: '#/components/schemas/HttpHateoasLink'
+          readOnly: true
+    SpecialAccountConditions:
+      type: object
+      properties:
+        withdrawalCharges:
+          type: boolean
+        withdrawalConditions:
+          type: boolean
+        depositConditions:
+          type: boolean
+        blockedWithdrawal:
+          type: boolean
+        blockedDeposit:
+          type: boolean
+      description: object holding special account conditions<br><br>Only applicable for private context
+    TransactionLimits:
+      type: object
+      properties:
+        transactionAmount:
+          type: number
+          description: present only if user has a specific limit for registrering transfers or payments on this account
+        approvalAmount:
+          type: number
+          description: present only if user has a specific limit for approving transfers and payments on this account
+      description: present only for corporate context if user has a specific limit for registering or approving transfers or payments on this account
+    AccountAuthorizedCustomers:
+      type: object
+      properties:
+        accountNumber:
+          type: string
+        validFromDate:
+          type: string
+        authorizedTo:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+        accountOwner:
+          $ref: '#/components/schemas/Customer'
+    Customer:
+      type: object
+      properties:
+        customerNumber:
+          type: string
+          example: "00911111110"
+        firstName:
+          type: string
+          example: "Adam"
+        lastName:
+          type: string
+          example: "Apple"
+        validFromDate:
+          type: string
+          example: "2017-09-29"
+        links:
+          type: object
+          properties:
+            contactInfo:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    ListResponseAccountAuthorizedCustomers:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountAuthorizedCustomers'
+    AccountDetailsFreeWithdrawals:
+      type: object
+      x-examples: {}
+      description: Free Withdrawal Details
+      properties:
+        accountIdReference:
+          type: string
+        numberOfFreeWithdrawals:
+          type: string
+        freeWithdrawalsPeriod:
+          type: string
+          enum:
+            - monthly
+            - second_month
+            - quarterly
+            - tertialy
+            - bi_annually
+            - annually
+            - uknown
+          example: monthly
+        performedWithdrawalsInPeriod:
+          type: string
+        numberOfRemainingFreeWithdrawals:
+          type: string
+          description: |-
+            numberOfFreeWithdrawals minus performedWithdrawalsInPeriod.
+            If negative amount, set to 0.
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HttpHateoasLink'
+          properties:
+            self:
+              $ref: '#/components/schemas/HttpHateoasLink'
+      title: ''
+    ListResponseAccounts:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Accounts'
+    AuthorizedCustomer:
+      type: object
+      description: Details of customer with account authorization.
+      properties:
+        id:
+          type: string
+          example: Not to be used for business logic
+        customerNumber:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum:
+            - owner
+            - disposal
+            - collateral
+            - guarantor
+            - unknown
+            - coowner
+            - codebtor
+            - guardian
+            - access
+            - addressee
+            - creditor
+          readOnly: true
+        accountNumber:
+          type: string
+          readOnly: true
+        validFromDate:
+          type: string
+          format: date
+        validToDate:
+          type: string
+          format: date
+        links:
+          type: object
+          properties:
+            contactInfo:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    ListResponseAuthorizedCustomer:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorizedCustomer'
+      description: List of authorized customers
+    AuthorizedCustomersContactInfoResponse:
+      type: object
+      description: List of authorized customers
+      required:
+        - id
+        - firstName
+        - lastName
+        - address
+        - postcode
+        - town
+        - countryCode
+      properties:
+        id:
+          type: string
+          description: "Customer number, usually it is an SSN"
+          example: "29879799366"
+        firstName:
+          type: string
+          description: "Disponents first name"
+          example: 'Ola'
+        lastName:
+          type: string
+          description: 'Disponents last name'
+          example: 'Nordmann'
+        address:
+          description: "Disponents address"
+          type: object
+          required:
+            - line1
+          properties:
+            line1:
+              type: string
+              description: "First line of disponents address"
+              example: 'Veien 1'
+            line2:
+              type: string
+              description: "Second line of disponents address"
+              example: 'Blokk 2'
+            line3:
+              type: string
+              description: "Third line of disponents address"
+              example: 'Oppgang 3'
+        postcode:
+          type: string
+          description: "Disponents address postal code"
+          example: '2317'
+        town:
+          type: string
+          description: "Disponents address town name"
+          example: 'HAMAR'
+        countryCode:
+          type: string
+          description: "Disponents address country code"
+          example: "NO"
+    BsuDetails:
+      type: object
+      properties:
+        accountIdReference:
+          type: string
+        totalBalance:
+          type: number
+          description: the balance which is the total savings amount
+          example: 23927.83
+        depositedAmountThisYear:
+          type: number
+          description: the deposit to the BSU savings account this year
+          example: 25000.3
+        totalDepositedAmount:
+          type: number
+          description: the total savings amount excluding interest calculated from the start saving date
+          example: 25003.8
+        maxAllowedDepositPerYear:
+          type: number
+          description: the maximum deposit amount allowed per year
+          example: 27500.0
+        maxAllowedDepositTotal:
+          type: number
+          description: the maximum deposit amount allowed totally
+          example: 300000.0
+        taxDeductionThisYear:
+          type: number
+          description: the tax deduction amount calculated based on deposit amount
+            this year
+          example: 2000
+        links:
+          type: object
+          description: attribute holding list of links which may be returned from this method
+          additionalProperties:
+            $ref: '#/components/schemas/HttpHateoasLink'
+          properties:
+            self:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    AccountDetails:
+      type: object
+      properties:
+        accountIdReference:
+          type: string
+        accountCreateDate:
+          type: string
+          format: date-time
+        statementFrequency:
+          type: string
+          enum:
+            - daily
+            - weekly
+            - secondweek
+            - monthly
+            - quarterly
+            - biannually
+            - annually
+            - monthlyon12th
+            - monthlyon24th
+            - request
+            - fullpage
+            - nostatement
+            - unknown
+        settlementAccount:
+          $ref: '#/components/schemas/SettlementAccount'
+      description: Account Details
+    SettlementAccount:
+      type: object
+      properties:
+        bban:
+          type: string
+        iban:
+          type: string
+        settlementType:
+          type: string
+          enum:
+            - fees
+            - interests
+            - interests_and_fees
+          example: fees
+      description: Settlement Account
+    Expenses:
+      type: object
+      properties:
+        accountIdReference:
+          type: string
+        totalFeesPaid:
+          type: number
+        totalFeesToBeWithdrawn:
+          type: number
+        capitalizedFeeUntilDate:
+          type: string
+          format: date-time
+    GuaranteeDetails:
+      type: object
+      properties:
+        accountIdReference:
+          type: string
+        validFrom:
+          type: string
+          format: date-time
+        validTo:
+          type: string
+          format: date-time
+        guaranteeAmount:
+          type: number
+        localCurrencyGuaranteeAmount:
+          type: number
+        guaranteeCurrency:
+          type: string
+        commissionRate:
+          type: number
+        commissionThisYear:
+          type: number
+        totalCommission:
+          type: number
+        totalEstablishmentFee:
+          type: number
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HttpHateoasLink'
+          properties:
+            self:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    AccountImmediateFees:
+      type: object
+      properties:
+        id:
+          type: string
+        accountIdReference:
+          type: string
+        amount:
+          type: number
+        totalFee:
+          type: number
+      required:
+        - totalFee
+    InterestHistory:
+      type: object
+      properties:
+        validFromDate:
+          type: string
+          format: date-time
+        interestType:
+          type: string
+          enum:
+            - variable
+            - reference
+            - fixed
+            - tiered
+        nominalInterest:
+          type: number
+          example: 1.34
+          description: 'Available for interest types variable, fixed and reference.'
+        referenceRateName:
+          type: string
+          description: Available for interest type reference.
+        tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tier'
+    ListResponseInterestHistory:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/InterestHistory'
+    Tier:
+      type: object
+      properties:
+        tierMinValue:
+          type: number
+        tierMaxValue:
+          type: number
+        interest:
+          type: number
+    Interests:
+      type: object
+      properties:
+        interestType:
+          type: string
+          enum:
+            - variable
+            - reference
+            - fixed
+            - tiered
+        nominalInterest:
+          type: number
+        totalInterest:
+          type: number
+        referenceRateName:
+          type: string
+        referenceRate:
+          type: number
+        margin:
+          type: number
+        referenceRateDistributor:
+          type: string
+          enum:
+          - refinitiv
+        nextAdjustment:
+          type: string
+          format: date-time
+        fixedFrom:
+          type: string
+          format: date-time
+        fixedTo:
+          type: string
+          format: date-time
+        tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tier'
+    InterestsDepositAccount:
+      type: object
+      properties:
+        accountIdReference:
+          type: string
+        relatedAccountNumberJointInterest:
+          type: string
+          description: 'If a related accountnumber is set, no rate and interest information set in other attributes.'
+        interestRateTier:
+          type: array
+          description: Deposit credit interest information
+          items:
+            $ref: '#/components/schemas/RateTier'
+        creditLineInterestRateTier:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreditLineRateTier'
+        interestRateBase:
+          type: string
+        creditLineInterestRateBase:
+          type: string
+        overdraftInterestRateBase:
+          type: string
+        creditLineAdditionalInterestRate:
+          type: number
+        creditLineCommissionInterestRate:
+          type: number
+        creditLineAdditionalCommissionInterestRate:
+          type: number
+        overdraftInterestRate:
+          type: number
+        interestMargin:
+          type: number
+        creditLineInterestMargin:
+          type: number
+        interestReferenceRate:
+          type: number
+        creditLineInterestReferenceRate:
+          type: number
+        interestAmountCapitalizedThisYear:
+          type: number
+        creditLineInterestAmountCapitalizedThisYear:
+          type: number
+        creditLineAdditionalInterestAmountCapitalizedThisYear:
+          type: number
+        creditLineCommissionInterestAmountCapitalizedThisYear:
+          type: number
+        creditLineAdditionalCommissionInterestAmountCapitalizedThisYear:
+          type: number
+        interestAmountToBeCredited:
+          type: number
+        creditLineInterestAmountToBeWithdrawn:
+          type: number
+        creditLineAdditionalInterestAmountToBeWithdrawn:
+          type: number
+        creditLineCommissionInterestAmountToBeWithdrawn:
+          type: number
+        creditLineAdditionalCommissionInterestAmountToBeWithdrawn:
+          type: number
+        overdraftInterestAmountToBeWithdrawn:
+          type: number
+        creditLineAmount:
+          type: number
+        creditLineAmountAdditional:
+          type: number
+        interestIntervalCalculation:
+          type: boolean
+        creditLineInterestIntervalCalculation:
+          type: boolean
+        creditLineAdditionalInterestMargin:
+          type: number
+        overdraftInterestMargin:
+          type: number
+        creditLineAdditionalInterestReferenceRate:
+          type: number
+        overdraftInterestReferenceRate:
+          type: number
+        interestReferenceRateDistributor:
+          type: string
+        creditLineInterestReferenceRateDistributor:
+          type: string
+        creditLineAdditionalInterestReferenceRateDistributor:
+          type: string
+        overdraftInterestReferenceRateDistributor:
+          type : string
+        overdraftInterestAmountCapitalizedThisYear:
+          type : number
+    RateTier:
+      properties:
+        tier:
+          type: integer
+          format: int64
+        tierMinimumAmount:
+          type: number
+        tierMaximumAmount:
+          type: number
+        totalInterestRate:
+          type: number
+    CreditLineRateTier:
+      properties:
+        creditLineTier:
+          type: integer
+          format: int64
+        creditLineTierMinimumUtilizationRatio:
+          type: number
+        creditLineTierMaximumUtilizationRatio:
+          type: number
+        creditLineTotalInterestRate:
+          type: number
+    LinkedService:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        accountIdReference:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - terminated
+            - blocked
+            - invalid
+            - unknown
+        created:
+          type: string
+          format: date-time
+        validFrom:
+          type: string
+          format: date-time
+    ListResponseLinkedService:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkedService'
+    LoanDetails:
+      type: object
+      description: Loan details
+      properties:
+        accountIdReference:
+          type: string
+        initialAmount:
+          type: number
+        disbursementDate:
+          type: string
+          format: date-time
+        loanCategory:
+          type: string
+          enum:
+            - serial
+            - serial_fixed
+            - annuity
+            - annuity_fixed
+            - unknown
+        loanPurpose:
+          type: string
+        interests:
+          $ref: '#/components/schemas/Interests'
+        payment:
+          $ref: '#/components/schemas/LoanDetailsPayment'
+        nextTerm:
+          $ref: '#/components/schemas/NextTerm'
+        yearToDateTotals:
+          $ref: '#/components/schemas/YearToDateTotals'
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HttpHateoasLink'
+          properties:
+            self:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            interesthistory:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            repaymentplan:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            loanfacility:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    LoanDetailsPayment:
+      type: object
+      properties:
+        termLength:
+          type: integer
+          format: int64
+        balance:
+          type: number
+        plannedDownpaymentDate:
+          type: string
+          format: date-time
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        paymentMethodInfo:
+          type: string
+    PaymentMethod:
+      type: string
+      example: "plaingiro"
+      description: |-
+        Payment method type:
+        - plaingiro - Plain giro is used.
+        - autocharge - Automatic charge without statement.
+        - autochargestatement - Automatic charge with statement.
+        - overrule - Overrule giro payment.
+        - contractgiro - Contract giro is used.
+        - e_invoice
+        - ehf_invoice
+        - ext_invoice - External invoice.
+        - unknown - Unknown payment type.
+
+      enum:
+        - plaingiro
+        - autocharge
+        - autochargestatement
+        - overrule
+        - contractgiro
+        - e_invoice
+        - ehf_invoice
+        - ext_invoice
+        - unknown
+    NextTerm:
+      type: object
+      properties:
+        paymentDate:
+          type: string
+          format: date-time
+        downpayment:
+          type: number
+        principal:
+          type: number
+        interests:
+          type: number
+        fees:
+          type: number
+        overdueInterests:
+          type: number
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+        createdBy:
+          type: string
+        createdDate:
+          type: string
+          format: date-time
+        domain:
+          type: string
+          enum:
+            - domestic
+            - crossborder
+            - sepa
+            - unknown
+        status:
+          $ref: '#/components/schemas/Status'
+        rights:
+          type: object
+          additionalProperties:
+            type: boolean
+          properties:
+            empty:
+              type: boolean
+        dueDate:
+          type: string
+          format: date-time
+        executionDate:
+          type: string
+          format: date-time
+        plannedExecutionDate:
+          type: string
+          format: date-time
+        invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invoice'
+        eri:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtendedRemittanceInformation'
+        paymentType:
+          type: string
+          enum:
+            - transfer
+            - urgent_transfer
+            - fixed_transfer
+            - payment
+            - urgent_payment
+            - recurring_payment
+            - ebill
+            - autopayment
+            - direct_debit
+            - credit_card_transfer
+            - credit_card_payment
+            - immediate
+            - friends
+            - smallpayment
+            - ecommerce
+            - digipost
+            - sping
+            - cheque
+            - not_available
+            - currency_transfer
+            - currency_payment
+            - charges
+            - salary_payment
+        receiptType:
+          type: string
+          enum:
+            - print
+            - oblat
+            - sticker
+            - none
+        prioritized:
+          type: boolean
+        immediate:
+          type: boolean
+        debitor:
+          $ref: '#/components/schemas/Debitor'
+        creditor:
+          $ref: '#/components/schemas/PaymentCreditor'
+        amounts:
+          $ref: '#/components/schemas/Amounts'
+        approvers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Approver'
+        paymentReference:
+          type: string
+        endToEndIdentification:
+          type: string
+        paymentFileId:
+          type: string
+        originalMessageId:
+          type: string
+        standingOrderId:
+          $ref: '#/components/schemas/StandingOrderId'
+        automaticGeneratedEinvoiceAgreement:
+          type: boolean
+        invoice:
+          $ref: '#/components/schemas/Invoice'
+        einvoiceDetails:
+          $ref: '#/components/schemas/EInvoiceDetails'
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HttpHateoasLink'
+          properties:
+            self:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            approve:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            unapprove:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            stop:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            start:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            crossborder:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            sepa:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            status:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            details:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            ebill:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            invoice:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            standingorder:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            paymentfile:
+              $ref: '#/components/schemas/HttpHateoasLink'
+            email_pdf:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    EInvoiceDetails:
+      type: object
+      properties:
+        einvoiceType:
+          type: string
+        einvoiceReference:
+          type: string
+    YearToDateTotals:
+      type: object
+      properties:
+        downpayment:
+          type: number
+        principal:
+          type: number
+        interests:
+          type: number
+        fees:
+          type: number
+        overdueInterests:
+          type: number
+    Amount:
+      type: object
+      properties:
+        value:
+          type: number
+          exclusiveMaximum: false
+          exclusiveMinimum: false
+        currency:
+          type: string
+      required:
+        - value
+        - currency
+    Amounts:
+      type: object
+      properties:
+        currencyOfTransfer:
+          type: string
+        instructed:
+          $ref: '#/components/schemas/Amount'
+        estimated:
+          $ref: '#/components/schemas/Amount'
+        estimatedBaseCurrency:
+          $ref: '#/components/schemas/Amount'
+        estimatedTransferCurrency:
+          $ref: '#/components/schemas/Amount'
+        executed:
+          $ref: '#/components/schemas/Amount'
+    Approver:
+      type: object
+      properties:
+        name:
+          type: string
+        dateOfApproval:
+          type: string
+          format: date-time
+        userId:
+          type: string
+    Debitor:
+      required:
+        - account
+      type: object
+      properties:
+        onBehalfOf:
+          type: string
+        message:
+          type: string
+        accountIdReference:
+          type: string
+        account:
+          $ref: '#/components/schemas/Account'
+        ultimateDebitor:
+          $ref: '#/components/schemas/UltimateDebitor'
+    ExtendedRemittanceInformation:
+      type: object
+      properties:
+        invoiceType:
+          type: string
+          enum:
+            - cinv
+            - cren
+        amount:
+          $ref: '#/components/schemas/Amount'
+        cid:
+          type: string
+        message:
+          type: string
+    Invoice:
+      type: object
+      properties:
+        invoicee:
+          type: string
+        reference:
+          type: string
+        date:
+          type: string
+          format: date-time
+        cid:
+          type: string
+        amount:
+          $ref: '#/components/schemas/Amount'
+        referredDocumentCount:
+          type: integer
+          format: int32
+
+    ListResponseWithPaginationPayment:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+        next:
+          $ref: '#/components/schemas/NextObject'
+        partial:
+          type: boolean
+    NextObject:
+      type: object
+      properties:
+        index:
+          type: integer
+          format: int32
+        number:
+          type: integer
+          format: int32
+        totalCount:
+          type: integer
+          format: int64
+        fromDate:
+          type: string
+          format: date-time
+        toDate:
+          type: string
+          format: date-time
+        fromAmount:
+          type: number
+        toAmount:
+          type: number
+    OpenBankingAccountFlag:
+      type: string
+      enum:
+        - both
+        - active
+        - candidate
+      default: both
+    PaymentCreditor:
+      required:
+        - account
+      type: object
+      properties:
+        name:
+          type: string
+        message:
+          type: string
+        multilineMessage:
+          type: array
+          items:
+            type: string
+        account:
+          $ref: '#/components/schemas/Account'
+        ultimateCreditor:
+          $ref: '#/components/schemas/UltimateCreditor'
+    Status:
+      type: object
+      properties:
+        major:
+          type: string
+          enum:
+            - pending_confirmation
+            - pending_payment
+            - pending_approval
+            - cancelled
+            - suspended
+            - rejected
+            - processing
+            - completed
+            - other
+            - not_available
+        minor:
+          type: string
+          enum:
+            - insufficient_funds
+            - ignore_amount_limit
+            - technical_error
+            - exceeding_max_limit
+            - agreement_suspended
+            - agreement_not_found
+            - authorization_failed
+            - invalid_debit_account
+            - invalid_credit_account
+            - invalid_cid
+            - bsu_year_exceeded
+            - bsu_tot_exceeded
+            - bsu_age_exceeded
+            - cancelled_by_bank
+            - cancelled_by_user
+            - verification_required
+            - incomplete
+            - stopped
+            - stopped_by_user
+            - debit_or_credit_account_blocked
+            - remittance
+            - clearing_system_member
+            - transmission
+            - payment_information_block
+            - instruction_id
+            - insufficient_access_rights
+            - payment_ok
+            - creditor_timeout
+            - other
+    Time:
+      type: string
+      enum:
+        - future
+        - past
+    UltimateCreditor:
+      type: object
+      properties:
+        name:
+          type: string
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        postcode:
+          type: string
+        town:
+          type: string
+        countryCode:
+          type: string
+        identifier:
+          $ref: '#/components/schemas/UltimateIdentifier'
+    UltimateDebitor:
+      type: object
+      properties:
+        name:
+          type: string
+        identifier:
+          $ref: '#/components/schemas/UltimateIdentifier'
+    UltimateIdentifier:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - person
+            - org
+        value:
+          type: string
+    ListResponsePsd2Information:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Psd2Information'
+      description: List of PSD2 Information
+    Psd2Information:
+      type: object
+      properties:
+        bban:
+          type: string
+        iban:
+          type: string
+        accountIdReference:
+          type: string
+          description: |-
+            Always a BBAN account number.
+            Refers to GET /accounts#id
+        aisp:
+          type: boolean
+        pisp:
+          type: boolean
+      description: PSD2 Information
+      title: ''
+    ListResponseStakeHolder:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/StakeHolder'
+    StakeHolder:
+      type: object
+      description: Customers role on an account
+      properties:
+        id:
+          type: string
+        accountIdReference:
+          type: string
+          description: Always a BBAN account number
+        roleCustomerNumber:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        validFromDate:
+          type: string
+          format: date
+        role:
+          type: string
+          enum:
+            - owner
+            - disposal
+            - collateral
+            - guarantor
+            - unknown
+            - coowner
+            - codebtor
+            - guardian
+            - access
+            - addressee
+            - creditor
+            - contact
+    TerminateDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HttpHateoasLink'
+          properties:
+            terminate:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    ValidateAccountClosingDetails:
+      type: object
+      description: Identifies if an account meets the conditions to allow closing.
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        allowClosing:
+          type: boolean
+        totalSettlement:
+          type: number
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/HttpHateoasLink'
+          properties:
+            close:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    Claim:
+      type: object
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        amount:
+          $ref: '#/components/schemas/Amount'
+    ClaimRequest:
+      type: object
+      properties:
+        claim:
+          $ref: '#/components/schemas/Claim'
+    StartRdsaReleaseProcessResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Order ID
+          example: 87f02e03-8e02-452e-ad81-9a6e0651c1cc
+        links:
+          type: object
+          properties:
+            order:
+              $ref: '#/components/schemas/HttpHateoasLink'
+    AccountsPsd2InformationUpdateRequest:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Psd2Information'
+      description: List of PSD2 Information
+    HttpHateoasLink:
+      title: httpHateoasLink
+      type: object
+      properties:
+        href:
+          $ref: '#/components/schemas/RelativeUrl'
+        context:
+          type: string
+          description: Context part of link path.
+        verbs:
+          type: array
+          description: HTTP verbs valid for the link
+          items:
+            $ref: '#/components/schemas/HttpVerb'
+      required:
+        - href
+        - context
+        - verbs
+    HttpVerb:
+      type: string
+      title: httpVerb
+      enum:
+        - GET
+        - PUT
+        - PATCH
+        - POST
+        - DELETE
+        - OPTIONS
+        - HEAD
+        - TRACE
+      example: GET
+    RelativeUrl:
+      title: relativeUrl
+      type: string
+      description: relative URL path
+      example: /someResource/enc!!SomeEncryptedId
+    AccountId:
+      title: AccountId
+      type: string
+      description: Encoded account ID used internally in ERA
+      example: enc!!0TOz1HVZc00ptvAwuiBPr_m1eSC78RGYhM_R03NFSfMkE9CZZWI0Jkt6GUlDrQo8
+    CustomerId:
+      title: CustomerId
+      type: string
+      description: Encoded customer number. Usually it is an SSN
+      example: enc!!0TOz1HVZc00ptvAwuiBPr_m1eSC78RGYhM_R03NFSfMkE9CZZWI0Jkt6GUlDrQo8
+    StandingOrderId:
+      title: StandingOrderId
+      type: string
+      description: Encoded account ID used internally in ERA
+      example: enc!!0TOz1HVZc00ptvAwuiBPr_m1eSC78RGYhM_R03NFSfMkE9CZZWI0Jkt6GUlDrQo8
+    ValidateCustomerNameResponse:
+      type: object
+      properties:
+        fullname:
+          type: string
+    ValidateCustomerNameRequest:
+      required:
+      - customerName
+      - customerNumber
+      type: object
+      properties:
+        customerNumber:
+          type: string
+        customerName:
+          type: string
+
+  examples:
+    error-session-timed-out:
+      value:
+        status: 401
+        system: ERA
+        subSystem: MAIN
+        code: GEN-0014
+        message: Given netbank-session has timed out
+        developerMessage: Given netbank-session 65167842417246 has timed out 10.10.2023, 13:04
+
+    error-forbidden-unencrypted-id:
+      value:
+        status: 403
+        system: ERA
+        subSystem: MAIN
+        code: GEN-0043
+        message: Not allowed with unencrypted id
+        developerMessage: Not allowed with unencrypted id 12345
+
+    get-account-authorizedcustomers-contactinfo:
+      value:
+        id: "29879799366"
+        firstName: Martin
+        lastName: Datamaskin
+        address:
+          line1: "LÅVEVEIEN 74"
+          line2: ""
+          line3: ""
+        postcode: "3014"
+        town: "DRAMMEN"
+        countryCode: "NO"
+
+    put-account-id-release:
+      value:
+        id: "87f02e03-8e02-452e-ad81-9a6e0651c1cc"
+        links:
+          href: "/orders/enc!!mvP8AvWBVS94A96PwPKedGxCN6Wz17ubx6Fddz7xJAX2kY4FfC0_dGVUKbrNwOmTLG8jpXc96ksS25F0djspeg=="
+          verbs:
+            - GET
+          context: /era
+
+servers:
+  - url: '/v1'
+    description: 'Major api version'
+tags:
+  - name: Accounts

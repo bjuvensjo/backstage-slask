@@ -1,0 +1,10 @@
+x-evry-system:
+  name: CUS
+  description: iHub Customer (CUS) 
+x-evry-deployment:  
+  name: cus-ihub-kunde-dist 
+  description: iHub customer
+x-evry-event:
+  name: CUS_ADDRESS_V2
+  description: An event triggered by an update of one of the customers addresses. It can be a create, update or close of the address.
+  comment: Event is sent from CUS via CTP-CIG.
