@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: example-service
+  description: An example service that does something
+  tags:
+    - example
+    - service
+spec:
+  type: service
+  lifecycle: experimental
+  owner: team-example
