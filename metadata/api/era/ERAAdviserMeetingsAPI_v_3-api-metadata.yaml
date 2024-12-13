@@ -29,7 +29,7 @@ spec:
   definition:
     $text: /data/baz-api.yaml
   attachments:
-    - url: /data/attachment1.yaml
+    - uri: /data/attachment1.yaml
       title: attachment1
-    - url: /data/attachment2.txt
+    - uri: /data/attachment2.txt
       title: attachment2

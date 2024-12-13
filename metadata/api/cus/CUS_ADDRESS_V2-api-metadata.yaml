@@ -19,5 +19,5 @@ spec:
   definition:
     $text: /data/api/cus/CUS_ADDRESS_V2/CUS_ADDRESS_V2.yaml
   attachments:
-  - url: /data/api/cus/CUS_ADDRESS_V2/CUS_ADDRESS_V2.xsd
-    title: CUS_ADDRESS_V2.xsd
+    - uri: /data/api/cus/CUS_ADDRESS_V2/CUS_ADDRESS_V2.xsd
+      title: CUS_ADDRESS_V2.xsd
