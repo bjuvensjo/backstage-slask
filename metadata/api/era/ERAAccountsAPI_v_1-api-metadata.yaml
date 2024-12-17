@@ -16,6 +16,13 @@ spec:
   apiProvidedBy: ebank-rest-api-dist
   system: era
   team: sacco
+  feedback:
+    emails:
+      - john.doe@example.com
+      - jane.doe@example.com
+    slackChannels:
+      - https://example.slack.com/archives/1234567890
+      - https://example.slack.com/archives/9876543210
   definition:
     $text: /data/api/era/ERAAccountsAPI_v_1/ERAAccountsAPI_v_1.yaml
   # attachments: <UPDATE THIS LINE IF RELEVANT>
