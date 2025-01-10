@@ -1,0 +1,32 @@
+asyncapi: 3.0.0
+info:
+  title: Account Events
+  version: 1.0.0
+  description: Account events
+channels:
+  accountEvent:
+    address: account/events
+    messages:
+      AccountEvent:
+        $ref: "#/components/messages/AccountEvent"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: account.event
+          type: topic
+operations:
+  onAccountEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/accountEvent"
+    messages:
+      - $ref: "#/channels/accountEvent/messages/AccountEvent"
+components:
+  messages:
+    AccountEvent:
+      contentType: application/xml
+      payload:
+        schemaFormat: "application/xml"
+        schema:
+          $ref: "./accountEvent.xsd"
