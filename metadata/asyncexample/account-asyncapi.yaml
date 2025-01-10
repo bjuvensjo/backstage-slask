@@ -29,4 +29,4 @@ components:
       payload:
         schemaFormat: "application/xml"
         schema:
-          $ref: "./accountEvent.xsd"
+          $ref: "/metadata/asyncexample/accountEvent.xsd"
