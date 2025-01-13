@@ -2,7 +2,7 @@ apiVersion: finods.com/v1
 kind: API
 metadata:
   name: Account_Events_avro
-  title: Account_Eventsa_avro
+  title: Account_Events_avro
 spec:
   type: asyncapi
   visibility: external
