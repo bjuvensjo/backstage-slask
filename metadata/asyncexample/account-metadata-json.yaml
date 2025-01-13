@@ -8,6 +8,6 @@ spec:
   visibility: external
   lifecycle: live
   apiProvidedBy: example-website
-  system: act
+  system: era
   definition:
     $text: /metadata/asyncexample/account-asyncapi-json.yaml
