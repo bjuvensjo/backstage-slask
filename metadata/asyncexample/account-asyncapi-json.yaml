@@ -26,23 +26,17 @@ components:
   messages:
     AccountEvent:
       payload:
-        schemaFormat: application/vnd.aai.asyncapi+json;version=2.0.0
+        schemaFormat: "application/vnd.aai.asyncapi+json;version=2.0.0"
         schema:
-          {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "AccountEvent",
-            "type": "object",
-            "properties":
-              {
-                "accountEvent":
-                  {
-                    "type": "object",
-                    "properties":
-                      {
-                        "name": { "type": "string" },
-                        "description": { "type": "string" },
-                      },
-                    "required": ["name", "description"],
-                  },
-              },
-          }
+          $schema: "http://json-schema.org/draft-07/schema#"
+          title: "AccountEvent"
+          type: "object"
+          properties:
+            accountEvent:
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+                description:
+                  type: "string"
+              required: ["name", "description"]
