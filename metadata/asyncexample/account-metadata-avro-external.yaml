@@ -1,0 +1,13 @@
+apiVersion: finods.com/v1
+kind: API
+metadata:
+  name: Account_Events_avro_external
+  title: Account_Eventsa_avro_external
+spec:
+  type: asyncapi
+  visibility: external
+  lifecycle: live
+  apiProvidedBy: foo
+  system: act
+  definition:
+    $text: /metadata/asyncexample/account-asyncapi-avro-external.yaml

@@ -1,0 +1,23 @@
+{
+    "type": "record",
+    "name": "AccountEvent",
+    "fields": [
+      {
+        "name": "accountEvent",
+        "type": {
+          "type": "record",
+          "name": "AccountEventRecord",
+          "fields": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "description",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    ]
+  }
