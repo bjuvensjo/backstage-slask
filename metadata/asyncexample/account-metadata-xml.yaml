@@ -7,7 +7,7 @@ spec:
   type: asyncapi
   visibility: external
   lifecycle: live
-  apiProvidedBy: foo
+  apiProvidedBy: example-website
   system: act
   definition:
     $text: /metadata/asyncexample/account-asyncapi-xml.yaml
