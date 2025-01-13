@@ -1,8 +1,8 @@
 apiVersion: finods.com/v1
 kind: API
 metadata:
-  name: Account_Events
-  title: Account_Events
+  name: Account_Events_json
+  title: Account_Events_json
 spec:
   type: asyncapi
   visibility: external
@@ -10,4 +10,4 @@ spec:
   apiProvidedBy: foo
   system: act
   definition:
-    $text: /metadata/asyncexample/account-asyncapi.yaml
+    $text: /metadata/asyncexample/account-asyncapi-json.yaml

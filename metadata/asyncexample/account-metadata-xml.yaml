@@ -1,0 +1,13 @@
+apiVersion: finods.com/v1
+kind: API
+metadata:
+  name: Account_Events_xml
+  title: Account_Events_xml
+spec:
+  type: asyncapi
+  visibility: external
+  lifecycle: live
+  apiProvidedBy: foo
+  system: act
+  definition:
+    $text: /metadata/asyncexample/account-asyncapi-xml.yaml

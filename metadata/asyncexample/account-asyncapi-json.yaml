@@ -26,16 +26,24 @@ components:
   messages:
     AccountEvent:
       payload:
-        schemaFormat: application/xml
+        schemaFormat: application/json
         schema: >
-          <?xml version="1.0" encoding="UTF-8"?>
-          <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
-          <xs:element name="UserSignedUp">
-            <xs:complexType>
-              <xs:sequence>
-                <xs:element name="displayName" type="xs:string" />
-                <xs:element name="email" type="xs:string" />
-              </xs:sequence>
-            </xs:complexType>
-          </xs:element>
-          </xs:schema>
+          {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "AccountEvent",
+            "type": "object",
+            "properties": {
+              "accountEvent": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": ["name", "description"]
+              }
+            }
+          }
