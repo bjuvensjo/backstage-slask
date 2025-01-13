@@ -26,28 +26,28 @@ components:
   messages:
     AccountEvent:
       payload:
-        schemaFormat: application/vnd.apache.avro+json
-        schema: >
-          {
-            "type": "record",
-            "name": "AccountEvent",
-            "fields": [
-              {
-                "name": "accountEvent",
-                "type": {
-                  "type": "record",
-                  "name": "AccountEventRecord",
-                  "fields": [
-                    {
-                      "name": "name",
-                      "type": "string"
-                    },
-                    {
-                      "name": "description",
-                      "type": "string"
-                    }
-                  ]
-                }
+        schemaFormat: "application/vnd.apache.avro+json;version=1.9.0"
+        schema: 
+        {
+          "type": "record",
+          "name": "AccountEvent",
+          "fields": [
+            {
+              "name": "accountEvent",
+              "type": {
+                "type": "record",
+                "name": "AccountEventRecord",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "name": "description",
+                    "type": "string"
+                  }
+                ]
               }
-            ]
-          }
+            }
+          ]
+        }
