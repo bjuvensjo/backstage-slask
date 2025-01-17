@@ -10,4 +10,4 @@ spec:
   apiProvidedBy: example-website
   system: era
   definition:
-    $text: /metadata/asyncexample/account-asyncapi-xml-external.yaml
+    $text: /data/asyncexample/account-asyncapi-xml-external.yaml

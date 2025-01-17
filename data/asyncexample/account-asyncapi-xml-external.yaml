@@ -29,4 +29,4 @@ components:
         # See https://www.asyncapi.com/docs/reference/specification/v3.0.0#multiFormatSchemaObject
         schemaFormat: "application/xml"
         schema: 
-          $ref: "https://raw.githubusercontent.com/bjuvensjo/backstage-slask/refs/heads/main/metadata/asyncexample/accountEvent-xml.xsd"        
+          $ref: "https://raw.githubusercontent.com/bjuvensjo/backstage-slask/refs/heads/main/data/asyncexample/accountEvent-xml.xsd"        
