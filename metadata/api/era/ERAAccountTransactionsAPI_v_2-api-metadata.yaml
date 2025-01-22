@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../../schema/api-schema-v1.json
+apiVersion: finods.com/v1
+kind: API
+metadata:
+  name: ERAAccountTransactionsAPI_v_2
+  title: Self-Service Banking - Account Transactions API v2
+spec:
+  type: openapi
+  visibility: external
+  lifecycle: live
+  apiProvidedBy: ebank-rest-api-dist
+  system: era
+  team: pago
+  definition:
+    $text: /data/api/era/ERAAccountTransactionsAPI_v_2/ERAAccountTransactionsAPI_v_2.yaml

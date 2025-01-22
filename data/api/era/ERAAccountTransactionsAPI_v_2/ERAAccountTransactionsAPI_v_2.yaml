@@ -1,0 +1,2609 @@
+openapi: 3.0.2
+info:
+  title: Self-Service Banking - Account Transactions API v2
+  termsOfService: "https://baas.api-portal.tietoevry.com/adp-portalclient/termsconditions"
+  license:
+    name: |-
+      © Tietoevry. All rights reserved. This code/information is protected by national and international law and
+      may not be used, copied, amended, compiled, decompiled, transferred etc. without the explicitly written
+      prior consent from Tietoevry. Any use in violation of the said will be prosecuted and compensation will be
+      claimed.
+  version: '2.21.0'
+  x-evry:
+    summary: Services to list and read transaction history on accounts
+  contact:
+    name: Tietoevry Support Financial Services
+    email: nettbank.bf@tietoevry.com
+
+  description: |-
+    ## Introduction
+    The Account Transactions API allows searching for transactions by account from Transaction Store.
+    Each transaction will be returned with some amount of information, enough to be able to display the transaction in a list.
+    For each transaction there will be a link to retrieve Transaction Details, which will provide additional information.
+
+    ## Implementing Common Use Cases with the API
+    This section shows how to implement some common use cases using the API.
+
+    **List available transactions**
+
+      The user can see the list of transactions on a specific account. Use POST /accounts/:accountid/transactions/search to list the transactions.
+      Without any search criteria the last transactions on the account will be listed, but limited to the last 13 months or 200 transactions.
+
+    **Search for specific transactions**
+
+      The user (ie. the bank customer) can specify various search parameters to select a subset of the account transactions. Use POST /accounts/:accountid/transactions/search
+      to search for transactions and specify any of the available search criteria.
+
+    **Get summary information for one transaction**
+
+      To get the same information as returned by POST /accounts/:accountid/transactions/search for one transaction, use GET /accounts/:accountid/transactions/:transactionid.
+
+      **Get detailed information for one transaction**
+
+      To get additional details for one transaction, use GET /accounts/:accountid/transactions/:transactionid/details.
+
+    **Export transactions**
+
+      The user can select to export all transactions matching the current search criteria to PDF, Excel or CSV formats.
+      Use POST /accounts/:accountid/transactions/search/export?format=pdf|excel|csv.
+
+    **Display printer friendly transaction details**
+
+      A PDF version of the transaction details can be retireved using POST /accounts/:accountid/transactions/:transactionid/pdf.
+
+    **Display GDPR friendly transaction details**
+
+      A PDF version of the transaction details, without personal information included (GDPR friendly), can be retireved using POST /accounts/:accountid/transactions/:transactionid/limited/pdf.
+
+    **Send GDPR friendly transaction details to email recipient**
+
+      A PDF version of the transaction details, without personal information included (GDPR friendly), can be sent to an email recipient using POST /accounts/:accountid/transactions/:transactionid/limited/pdf/email.
+      If the bank has Customer Dialog, a copy will be sent to the user's inbox.
+
+    ## Change Log
+      <table>
+        <tr>
+          <th align="left">Minor Version</th>
+          <th align="left">Change Description</th>
+        </tr>
+        <tr>
+          <td>v2.0</td>
+          <td>Initial revision</td>
+        </tr>
+        <tr>
+          <td>v2.1</td>
+          <td>Added subcategory vipps</td>
+        </tr>
+        <tr>
+          <td>v2.2</td>
+          <td>Added purpose field to transaction search/read responses</td>
+        </tr>
+        <tr>
+          <td>v2.3</td>
+          <td>Added paymentInPwh field to GET /accounts/id/transactions/id/details response</td>
+        </tr>
+        <tr>
+          <td>v2.4</td>
+          <td>Added amounts object to GET /accounts/id/transactions/id/details response</td>
+        </tr>
+        <tr>
+          <td>v2.5</td>
+          <td>Added payment link object to GET /accounts/id/transactions/id/details response</td>
+        </tr>
+        <tr>
+          <td>v2.6</td>
+          <td>Added standing order link to details</td>
+        </tr>
+        <tr>
+          <td>v2.7</td>
+          <td>Added incoming and outgoing balances to the response.</td>
+        </tr>
+        <tr>
+          <td>v2.8.0</td>
+          <td>Add new field for encrypted eBillId</td>
+        </tr>
+        <tr>
+          <td>v2.9.0</td>
+          <td>Added available balances to the response.</td>
+        </tr>
+        <tr>
+          <td>v2.10.0</td>
+          <td>Added standing order as subcategory.</td>
+        </tr>
+        <tr>
+          <td>v2.11.0</td>
+          <td>Added debit and credit account numbers to search response and to get transaction response</td>
+        </tr>
+        <tr>
+          <td>v2.12.0</td>
+          <td>Added new GET /accounts/id/transactions/id/payments</td>
+        </tr>
+        <tr>
+          <td>v2.13.0</td>
+          <td>Added payments link to /search</td>
+        </tr>
+        <tr>
+          <td>v2.14.0</td>
+          <td>Added initiator object.</td>
+        </tr>
+        <tr>
+          <td>v2.15.0</td>
+          <td>Added response HTTP 206</td>
+        </tr>
+        <tr>
+          <td>v2.16.0</td>
+          <td>Added new category cash.</td>
+        </tr>
+        <tr>
+          <td>v2.17.0</td>
+          <td>Added new category immediate.</td>
+        </tr>
+        <tr>
+          <td>v2.18.0</td>
+          <td>Added new subcategory savethechange.</td>
+        </tr>
+        <tr>
+          <td>v2.19.0</td>
+          <td>Added new endpoint for transaction search with limited from date.</td>
+        </tr>
+        <tr>
+          <td>v2.20.0</td>
+          <td>Added new endpoint for CPS document.</td>
+        </tr>
+        <tr>
+          <td>v2.21.0</td>
+          <td>Added Accept-Language header parameter</td>
+        </tr>
+      </table>
+
+servers:
+  - url: '/external/v2'
+    description: Base path for external environments.
+
+tags:
+  - name: account transactions
+    description: Services for retrieving and exporting account transactions.
+  - name: transaction documents
+    description: Service for exporting transactions.
+  - name: transaction payments
+    description: Services for retrieving and exporting payments associated with a transaction.
+
+paths:
+  /accounts/{accountid}/transactions/search:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId as returned from GET /accounts.
+        schema:
+          type: string
+      - name: Accept-Language
+        in: header
+        required: false
+        description: |-
+          Indicates the natural language and locale that the client prefers for transaction messages. For example: "en-GB", "no-NB", "no-NN", etc.
+          If not present, default user language will be used.
+        schema:
+          type: string
+    post:
+      summary: Account Transactions Search
+      description: |-
+        Returns requested number of account transactions matching the provided search criteria.
+
+        Prerequisites:
+        - None
+
+        Valid context:
+        - Private
+        - Corporate
+      operationId: post-v2-accounts-accountid-transactions-search
+      tags:
+        - account transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionSearchRequestBody'
+            examples:
+              sampleSearchRequest:
+                $ref: '#/components/examples/TransactionSearchRequestExample'
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionList'
+              examples:
+                transactionList:
+                  $ref: '#/components/examples/TransactionListExample'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '401':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+  /accounts/{accountid}/transactions/recent/search:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId.
+        schema:
+          type: string
+      - name: Accept-Language
+        in: header
+        required: false
+        description: |-
+          Indicates the natural language and locale that the client prefers for transaction messages. For example: "en-GB", "no-NB", "no-NN", etc.
+          If not present, default user language will be used.
+        schema:
+          type: string
+    post:
+      summary: Transactions Search with limited from date
+      description: |-
+        Returns requested number of account transactions from the given subsystem matching the provided search criteria.
+        Same as the regular transaction search, but from date is limited to a number of months, controlled by config.
+
+        Prerequisites:
+        - None
+
+        Valid context:
+        - Private
+        - Corporate
+      operationId: post-v3-transactions-recent-search
+      tags:
+        - account transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionSearchRequestBody'
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionList'
+              examples:
+                TransactionListExample:
+                  $ref: '#/components/examples/TransactionListExample'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '401':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+  /accounts/{accountid}/transactions/{transactionid}:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId as returned from GET /accounts.
+        schema:
+          type: string
+      - name: transactionid
+        in: path
+        required: true
+        description: This is the encoded transactionid as returned in POST /accounts/{accountId}/transactions.
+        schema:
+          type: string
+      - name: Accept-Language
+        in: header
+        required: false
+        description: |-
+          Indicates the natural language and locale that the client prefers for transaction messages. For example: "en-GB", "no-NB", "no-NN", etc.
+          If not present, default user language will be used.
+        schema:
+          type: string
+
+    get:
+      summary: Get information for one transaction.
+      description: |-
+        Returns information about one account transaction. The information returned is the exact same as returned
+        for the transaction in POST /accounts/{accountId}/transactions.
+
+        Prerequisites:
+        - None
+
+        Valid context:
+        - Private
+        - Corporate
+      operationId: get-v2-accounts-accountid-transactions-transactionid
+      tags:
+        - account transactions
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+              examples:
+                transactionPaymentShort:
+                  $ref: '#/components/examples/TransactionPaymentShort'
+                transactionTransferShort:
+                  $ref: '#/components/examples/TransactionTransferShort'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '401':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+  /accounts/{accountid}/transactions/{transactionid}/details:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId as returned from GET /accounts.
+        schema:
+          type: string
+      - name: transactionid
+        in: path
+        required: true
+        description: This is the encoded transactionid as returned in POST /accounts/{accountId}/transactions
+        schema:
+          type: string
+      - name: Accept-Language
+        in: header
+        required: false
+        description: |-
+          Indicates the natural language and locale that the client prefers for transaction messages. For example: "en-GB", "no-NB", "no-NN", etc.
+          If not present, default user language will be used.
+        schema:
+          type: string
+
+    get:
+      summary: Get detailed information for one transaction.
+      description: |-
+        Returns more information about one account transaction. The information returned from this service must be merged with the information returned from
+        GET /accounts/{accountId}/transactions/{transactionid} to make up the full information for the transaction.
+
+        Prerequisites:
+        - None
+
+        Valid context:
+        - Private
+        - Corporate
+      operationId: get-v2-accounts-accountid-transactions-transactionid-details
+      tags:
+        - account transactions
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedTransaction'
+              examples:
+                transactionWithMessage:
+                  $ref: '#/components/examples/TransactionWithMessage'
+                transactionWithKID:
+                  $ref: '#/components/examples/TransactionWithKID'
+                transactionWithStructuredInformation:
+                  $ref: '#/components/examples/TransactionWithStructuredInformation'
+                transactionWithMultiplePayments:
+                  $ref: '#/components/examples/TransactionWithMultiplePayments'
+                transactionFromEfaktura:
+                  $ref: '#/components/examples/TransactionFromInvoice'
+        '206':
+          description: |-
+            Partial response. When additional backend calls(s) fail,
+            e.g. call to payment to get more information for an outgoing transaction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedTransaction'
+              examples:
+                transactionWithMessage:
+                  $ref: '#/components/examples/TransactionWithMessage'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '401':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+  /accounts/{accountid}/transactions/{transactionid}/payments:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId.
+        schema:
+          type: string
+      - name: transactionid
+        in: path
+        required: true
+        description: |-
+          This is the encoded transactionid.
+        schema:
+          type: string
+
+    get:
+      summary: List payments associated with given transaction.
+      description: |-
+        List payments associated with given transaction.
+
+        Prerequisites:
+        - Outgoing transactions where payment is created in Tietoevry Payment.
+
+        Valid context:
+        - Private
+        - Corporate
+      operationId: get-v2-accounts-accountid-transactions-transactionid-payments
+      tags:
+        - transaction payments
+
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListOfPaymentsInTransaction'
+              examples:
+                PaymentsInTransactionExample:
+                  $ref: '#/components/examples/PaymentsInTransactionExample'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '401':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+  /accounts/{accountid}/transactions/search/export:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId as returned from GET /accounts.
+        schema:
+          type: string
+      - name: document_format
+        in: query
+        required: true
+        description: The wanted format of the export file, pdf, excel or csv.
+        schema:
+          type: string
+      - name: Accept-Language
+        in: header
+        required: false
+        description: |-
+          Indicates the natural language and locale that the client prefers for transaction messages. For example: "en-GB", "no-NB", "no-NN", etc.
+          If not present, default user language will be used.
+        schema:
+          type: string
+
+    post:
+      summary: Export account transactions
+      description: |-
+        Exports account transactions matching the provided search criteria.
+        NOTE: There is nothing in HTTP or REST that prevents a POST having URI parameters, but how this will be handled by different servers is an open question.
+
+        Prerequisites:
+        - None
+
+        Valid context:
+        - Private
+        - Corporate
+      operationId: post-v2-accounts-accountid-transactions-search-export
+      tags:
+        - account transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionSearchRequestBody'
+            examples:
+              example-1:
+                $ref: '#/components/examples/TransactionSearchRequestExample'
+
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/text:
+              schema:
+                type: string
+                format: binary
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '401':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+  /accounts/{accountid}/transactions/{transactionid}/cpsdocument:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId.
+        schema:
+          type: string
+      - name: transactionid
+        in: path
+        required: true
+        description: This is the encoded transactionid.
+        schema:
+          type: string
+      - name: Accept-Language
+        in: header
+        required: false
+        description: |-
+          Indicates the natural language and locale that the client prefers for transaction messages. For example: "en-GB", "no-NB", "no-NN", etc.
+          If not present, default user language will be used.
+        schema:
+          type: string
+
+    get:
+      summary: Get the CPS PDF document for an incoming corporate transaction.
+      description: |-
+        Get the CPS PDF document for an incoming corporate transaction.
+
+        Prerequisites:
+        - None
+
+        Valid context:
+        - Corporate
+      operationId: get-v2-accounts-accountid-transactions-transactionid-cpsdocument
+      tags:
+        - transaction documents
+
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+              example: 'Binary encoded PDF document'
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '401':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+        '500':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+  /accounts/{accountid}/transactions/{transactionid}/pdf:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId as returned from GET /accounts.
+        schema:
+          type: string
+      - name: transactionid
+        in: path
+        required: true
+        description: This is the encoded transactionid as returned in POST /accounts/{accountId}/transactions
+        schema:
+          type: string
+      - name: Accept-Language
+        in: header
+        required: false
+        description: |-
+          Indicates the natural language and locale that the client prefers for transaction messages. For example: "en-GB", "no-NB", "no-NN", etc.
+          If not present, default user language will be used.
+        schema:
+          type: string
+
+    post:
+      summary: Create a PDF of one transaction.
+      description: |-
+        Create a PDF of one transaction.
+
+            Prerequisites:
+            - None
+
+            Valid context:
+            - Private
+            - Corporate
+      operationId: post-v2-accounts-accountid-transactions-transactionid-pdf
+      tags:
+        - account transactions
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EraError'
+
+  /accounts/{accountid}/transactions/{transactionid}/limited/pdf:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId as returned from GET /accounts.
+        schema:
+          type: string
+      - name: transactionid
+        in: path
+        required: true
+        description: This is the encoded transactionid as returned in POST /accounts/{accountId}/transactions
+        schema:
+          type: string
+      - name: lang
+        required: false
+        in: query
+        description: Set to en_GB to get the document in english (overrides Accept-Language HTTP header and bank language licences) - if not provided Accept-Language is used.
+        schema:
+          type: string
+    post:
+      summary: Create a limited, i.e. GDPR friendly, PDF of one transaction
+      description: |-
+        Generate a PDF of the transaction details without any GDPR sensitive fields inside and return it to the client.
+
+        Prerequisites:
+          - None
+
+        Valid context:
+          - Private
+          - Corporate
+      operationId: post-v2-accounts-accountid-transactions-transactionid-limited-pdf
+      tags:
+        - account transactions
+      responses:
+          '200':
+            description: successful response
+            content:
+              application/pdf:
+                schema:
+                  type: string
+                  format: binary
+
+          '400':
+            description: Bad request
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/EraError'
+
+  /accounts/{accountid}/transactions/{transactionid}/limited/pdf/email:
+    parameters:
+      - name: accountid
+        in: path
+        required: true
+        description: |-
+          This is the encoded accountId as returned from GET /accounts.
+        schema:
+          type: string
+      - name: transactionid
+        in: path
+        required: true
+        description: This is the encoded transactionid as returned in POST /accounts/{accountId}/transactions
+        schema:
+          type: string
+      - name: lang
+        required: false
+        in: query
+        description: Set to en_GB to get the document in english (overrides Accept-Language HTTP header and bank language licences) - if not provided Accept-Language is used.
+        schema:
+          type: string
+    post:
+      summary: Send a limited. GDPR friendly, PDF of one transaction to an email recipient.
+      description: |-
+        Generate a PDF of the transaction details without any GDPR sensitive fields inside and sent the PDF to a specifed email recipient.
+
+        Prerequisites:
+          - None
+
+        Valid context:
+          - Private
+          - Corporate
+
+      operationId: post-v2-accounts-accountid-transactions-transactionid-limited-pdf-email
+      tags:
+        - account transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequestBody'
+
+      responses:
+          '204':
+            description: successful response
+
+          '400':
+            description: Bad request
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/EraError'
+
+components:
+  schemas:
+    EmailRequestBody:
+      type: object
+      required:
+        - recipientEmail
+      properties:
+        recipientEmail:
+          type: string
+          description: The email address of the recipient of the generated PDF.
+    Category:
+      type: string
+      description: |-
+        A list of categories. A category is a generic name for a group of similar transactions, e.g. Incoming, Payment, Transfer, Salary, etc.
+        The permitted categories are:
+          - incoming, incoming transactions.
+          - outgoing, outgoing transactions.
+          - payment, all transactions relating to domestic payments.
+          - immediate, all transactions relating to immediate (real time) payments/transfers.
+          - transfer, all transactions relating to transfer between own accounts.
+          - international, all transactions relating to cross border payments.
+          - purchase, all transactions relating to card, pos purchase, etc.
+          - cash, all transactions relating to cash withdrawal in ATM, etc.
+          - salary, all transactions relating to salary payments.
+          - interest, all transactions relating to interests.
+          - charge, all transactions relating to chagres.
+          - other, all other transactions.
+      enum:
+        - incoming
+        - outgoing
+        - payment
+        - immediate
+        - transfer
+        - international
+        - purchase
+        - cash
+        - salary
+        - interest
+        - charge
+        - other
+
+    TransactionSearchRequestBody:
+      type: object
+      description: The request body for searching for account transactions in POST /accounts/{accountid}/transactions/search.
+      properties:
+        category:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Category'
+        fromDate:
+          type: string
+          format: date
+          description: |-
+            Search for transactions executed from this date. ISO8601 format.
+            Default value:
+            Private context: Today minus 390 days.
+            Corporate context: Today minus 120 days.
+        toDate:
+          type: string
+          format: date
+          description: Search for transactions executed until this date. ISO8601 format. Default value is today.
+        fromAmount:
+          type: number
+          description: Search for transactions with amount from this amount.
+        toAmount:
+          type: number
+          description: Search for transactions with amount to this amount.
+        freeText:
+          type: string
+          description: |-
+            Freetext to match information in the following fields: merchantName, debtor and creditor name, account number and purpose.
+        pageSize:
+          type: integer
+          description: The requested page size for the list of transactions. Default is 200.
+        pageToken:
+          type: string
+          description: The page token, if empty or missing, the first page is returned.
+
+    TransactionList:
+      type: object
+      description: The transaction list response object, i.e. from POST /v2/accounts/:accountid/transactions/search.
+      properties:
+        authorizedUserMessage:
+          type: string
+          description: |-
+            This message is set if the current user is an authorized user on the account,
+            and will inform the user that access is only permitted from the date the user was authorized.
+            Accept-language header will be used to determine the language for the message.
+        totalsAndBalances:
+          $ref: '#/components/schemas/TotalsAndBalances'
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        links:
+          $ref: '#/components/schemas/TransactionListLinks'
+        next:
+          type: object
+          properties:
+            nextPageToken:
+              type: string
+
+    TotalsAndBalances:
+      type: object
+      properties:
+        availableBalance:
+          description: Will only be set for transaction from CPS.
+          type: object
+          properties:
+            amount:
+              type: string
+              description: |-
+                Available balance on the account on this date.
+              example: '23.56'
+            currency:
+              type: string
+              description: |-
+                The currency of the available balance.
+              example: NOK
+            date:
+              type: string
+              format: date
+              description: The ISO8601 formatted date of the available balance.
+              example: '2023-01-11'
+
+        incomingBalance:
+          type: object
+          properties:
+            amount:
+              type: string
+              description: |-
+                Balance on the account at start of search from date.
+              example: '123.56'
+            currency:
+              type: string
+              description: |-
+                The currency of the incoming balance.
+              example: 'NOK'
+            date:
+              type: string
+              format: date
+              description: The ISO8601 formatted date of the incoming balance.
+              example: '2023-01-11'
+
+        outgoingBalance:
+          type: object
+          properties:
+            amount:
+              type: string
+              description: |-
+                Balance on the account at the end of search to date.
+              example: '1678.99'
+            currency:
+              type: string
+              description: |-
+                The currency of the outgoing balance.
+              example: 'NOK'
+            date:
+              type: string
+              format: date
+              description: The ISO8601 formatted date of the outgoing balance.
+              example: '2023-02-14'
+
+        totalDebitAmount:
+          type: object
+          properties:
+            amount:
+              type: string
+              description: |-
+                Total amount debited account as a result of the transactions matching the search.
+                Currently only returned for corporate transactions from CPS.
+              example: '23768.87'
+            currency:
+              type: string
+              description: |-
+                The currency of the total debit amount.
+              example: 'NOK'
+
+        totalCreditAmount:
+          type: object
+          properties:
+            amount:
+              type: string
+              description: |-
+                Total amount credited account as a result of the transactions matching the search.
+                Currently only returned for corporate transactions from CPS.
+              example: '123768.91'
+            currency:
+              type: string
+              description: |-
+                The currency of the total credit amount.
+              example: 'NOK'
+
+    Transaction:
+      type: object
+      description: The transaction list item, i.e. one item in the response from POST /accounts/{accountid}/transactions/search.
+      required:
+        - id
+        - status
+        - category
+        - categoryDetails
+        - displayText
+        - transactionDate
+        - amounts
+      properties:
+        id:
+          type: string
+          description: |-
+            This is a unique id for the transaction.
+            Id for reserved or confirmation transaction may not constant over time and this case they shouldn't be cached.
+            Because of this, links for those transaction may also change so they also shouldn't be cached.
+          example: "C:B:97103385321::347702:00003453746345:2021-04-20"
+        status:
+          type: string
+          enum:
+            - booked
+            - reserved
+            - confirmation
+          description: The status of the transaction.
+        category:
+          $ref: '#/components/schemas/Category'
+        categoryDetails:
+          type: string
+          description: A more precise description of the transaction than category. There is a one-to-one mapping between ETC code and categoryDetails.
+          example: "Outgoing domestic payment with KID"
+        subCategory:
+          type: string
+          enum:
+            - einvoice
+            - autopayment
+            - autopaymentwitheinvoice
+            - immediate
+            - vipps
+            - tpp
+            - standingorder
+            - ebill
+            - savethechange
+          description: A further classification of the transaction.
+        displayText:
+          type: string
+          description: |-
+            The displayText string is built for the purpose of being displayed in a transaction list as the description of the transaction and the content will vary
+            depending on the transaction. E.g. for an outgoing payment it may include the name and/or account number of the payment recipient, for a card purchase in may contain the merchant name,
+            for a transfer it may contain the account name and/or number that the transfer is to/from.
+        purpose:
+          type: string
+          description: |-
+            A string generated by core to describe the transaction, also known as alfaref or text_reference.
+            NOTE: it is generated in the language of the bank and does not take into consideration the language that
+            user has selected in the internet bank.
+          example: Utb. 2000116 Vippsnr 500511
+        transactionDate:
+          type: string
+          format: date
+          description: The date of the transaction in ISO8601 format.
+        amounts:
+          type: object
+          properties:
+            executedAmount:
+              $ref: '#/components/schemas/ExecutedAmount'
+            instructedAmount:
+              $ref: '#/components/schemas/InstructedAmount'
+            estimatedInBaseCurrencyAmount:
+              $ref: '#/components/schemas/EstimatedInBaseCurrencyAmount'
+        creditor:
+          type: object
+          properties:
+            name:
+              type: string
+              description: The name of the creditor if available.
+              example: 'Ola Nordmann'
+            account:
+              type: object
+              properties:
+                accountIdReference:
+                  type: string
+                  description: |-
+                    Always the BBAN account number - refers to GET /accounts#id.
+                number:
+                  type: string
+                  description: The IBAN or BBAN(if IBAN not present) credit account number if available.
+                  example: 'NO4712345678909'
+                name:
+                  type: string
+                  description: The name of the account.
+                  example: 'My spending account'
+        debtor:
+          type: object
+          properties:
+            name:
+              type: string
+              description: The name of the debtor if available .
+              example: 'Ola Nordmann'
+            account:
+              type: object
+              properties:
+                accountIdReference:
+                  type: string
+                  description: |-
+                    Always the BBAN account number - refers to GET /accounts#id.
+                number:
+                  type: string
+                  description: The BBAN or IBAN debit account number if available.
+                  example: 'NO4712345678666'
+                name:
+                  type: string
+                  description: The name of the account.
+                  example: 'My spending account'
+        links:
+          $ref: '#/components/schemas/TransactionLinksInList'
+
+    DetailedTransaction:
+      type: object
+      required:
+        - id
+      properties:
+        paymentInPwh:
+          type: boolean
+          description: Field that indicates if there is a payment in PWH
+          example: false
+        id:
+          type: string
+          description: |-
+            The encoded transaction id is built for ERA to have all necessary information about the transaction in case of subsequent calls passing this id,
+            e.g. the client requesting more details about a particular transaction.
+            It is comprised of a colon separated list of fields.
+            For a booked transaction the fields are
+              - subsystem identifier, i.e. in which subsystem does this transaction belong.
+              - account number type, i.e. B for BBAN or I for IBAN.
+              - account number
+              - transactionid, i.e. the unique transaction reference in the subsystem.
+             - numericReference, for a transaction originating from PWH, this field can be used to find the original payment.
+             - executionDate, The date the transaction was executed, must be used together with numericReference to lookup original payment.
+            For a reserved transaction or confirmation, the fields are:
+              - subsystem identifier, i.e. in which subsystem does this transaction belong.
+              - account number type, i.e. B for BBAN or I for IBAN.
+              - account number
+              - hash, some information about the reservation/confirmation is encoded into this field for the purpose of being able to dispaly transaction details.
+                - amount
+                - dateBooked
+                - dateValued
+                - textReference
+                - domainCode
+                - FamilyCode
+                - SubfamilyCode
+                - proprietaryCode
+                - transactionCurrencyCode
+                - typeOfTransaction
+          example: "C:B:97103385321::347702:00003453746345:2021-04-20"
+        canBeCopied:
+          type: string
+          enum:
+            - no
+            - domestic
+            - transfer
+            - crossborder
+          description: A setting indicating if it is feasiible to create new payment based on this transaction. Possible values are
+            - no, it is not feasible, e.g. an incoming payment.
+            - domestic, a new similar domestic payment may be created based on this transaction.
+            - transfer, a new similar transfer may be created based on this transaction.
+            - crossborder, a new similar cross border payment may be created based on this transaction.
+        purpose:
+          type: string
+          description: This is a string created in core, slightly similar to displayText, but always in Norwegian. Not guaranteed to be present for all transactions.
+        executionTime:
+          type: string
+          description: The date and time the transaction was executed in ISO8601 format
+        bookingDate:
+          type: string
+          description: The date the transaction was booked in ISO8601 format.
+        valueDate:
+          type: string
+          description: The value date of the transaction.
+        reference:
+          $ref: '#/components/schemas/CompoundTransactionReference'
+        eBillId:
+          $ref:  "#/components/schemas/EbillId"
+        amounts:
+          type: object
+          properties:
+            executedAmount:
+              $ref: '#/components/schemas/ExecutedAmount'
+            instructedAmount:
+              $ref: '#/components/schemas/InstructedAmount'
+            estimatedInBaseCurrencyAmount:
+              $ref: '#/components/schemas/EstimatedInBaseCurrencyAmount'
+        transactionAgio:
+          type: string
+          description: The transaction agio.
+        exchangeRates:
+          $ref: '#/components/schemas/ExchangeRate'
+        initiator:
+          $ref: '#/components/schemas/Initiator'
+        debitor:
+          $ref: '#/components/schemas/Debtor'
+        creditor:
+          $ref: '#/components/schemas/Creditor'
+        card:
+            $ref: '#/components/schemas/Card'
+        product:
+            $ref: '#/components/schemas/Product'
+        bank:
+            $ref: '#/components/schemas/Bank'
+        links:
+          $ref: '#/components/schemas/TransactionLinks'
+    EbillId:
+      type: string
+      description: encrypted ebill id
+      example: 'enc!!K4pxQKs-PZgrLcNHbtv35_Yys_l95bEAgBQVWWLNTVfOgGnXGQQFN8E8ff3lB8TL'
+
+    ExchangeRate:
+      type: object
+      properties:
+        executed:
+          type: object
+          properties:
+            sourceCurrency:
+              type: string
+              description: The source currency code for the currency exchange.
+            targetCurrency:
+              type: string
+              description: The target currency code for the currency exchange.
+            rate:
+              type: string
+
+    AccountOwner:
+      description: 'Account owner if available.'
+      type: object
+      properties:
+        name:
+          type: string
+          description: 'The name of the account owner if available.'
+
+    HttpHateoasLink:
+      title: HttpHateoasLink
+      type: object
+      properties:
+        href:
+          $ref: '#/components/schemas/RelativeUrl'
+        verbs:
+          type: array
+          description: HTTP verbs valid for the link
+          items:
+            $ref: '#/components/schemas/HttpVerb'
+      required:
+        - href
+        - verbs
+    HttpVerb:
+      type: string
+      title: HttpVerb
+      enum:
+        - GET
+        - PUT
+        - PATCH
+        - POST
+        - DELETE
+        - OPTIONS
+        - HEAD
+        - TRACE
+      example: GET
+    RelativeUrl:
+      title: RelativeUrl
+      type: string
+      description: relative URL path
+      example: /someResource/enc!!SomeEncryptedId
+
+    Bank:
+      type: object
+      properties:
+        originatorBank:
+          type: string
+          description: The id or name of the originator bank.
+        countryCode:
+          type: string
+          description: The country code where the originator bank resides.
+
+    RemittanceInformation:
+      type: object
+      description: Remittance information, a.k.a 'message to recipient', can come in four different forms.
+        - Single line of text - The normal message to recipient for a private user.
+        - Single customer reference - The normal KID for a private user.
+        - Multiple lines of text - A corporate payment may include many lines of unstructured remittance information.
+        - Structured remittance information - A potentially long list of invoices and credit notes.
+      properties:
+        structuredMessage:
+          $ref: '#/components/schemas/StructureRemittanceItem'
+        multiLineMessage:
+          type: array
+          description: Normally, only one line of unstructured remittance information, a.k.a. message to recipient. But may be many lines of information.
+          items:
+            type: string
+            description: An individual line of unstructured remittance information.
+        customerReference:
+          type: string
+          description: The customer reference, e.g. the KID for a Norwegian transaction.
+
+    StructureRemittanceItem:
+      type: array
+      description: A structured remittiance information item represents one invoice and in the response for one transaction, there may be multiple invoices.
+      required:
+        - invoiceNumber
+      items:
+        properties:
+          invoice:
+              type: object
+              description: Each item in the list represent one invoice or credit note
+              properties:
+                invoiceNumber:
+                  type: string
+                  description: The invoice number. There will either be an invoice number or a customer reference.
+                customerReference:
+                  type: string
+                  description: The customer reference, e.g. the KID for a Norwegian transaction. There will either be an invoice number or a customer reference.
+                customerNumber:
+                  type: string
+                  description: The customer number of the debtor.
+                invoiceAmount:
+                  type: string
+                  description: The amount for the particular invoice.
+                invoiceDate:
+                  type: string
+                  description: The related invoice date in ISO8601 format.
+
+    Initiator:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the user that initiated the payment.
+          example: '1125100201'
+        name:
+          type: string
+          description: The name of the user that initiated the payment.
+          example: 'Ola Normann'
+
+    Debtor:
+      type: object
+      description: Transaction information about a debtor.
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        name:
+          type: string
+          description: The debtor name.
+        address:
+          $ref: '#/components/schemas/PartyAddress'
+        invoiceOwner:
+          type: string
+          description: |-
+           If the transaction is the result of an eFaktura that the current user approved on behalf of the legal owner
+            of the eFaktura, this field will contain the name of the legal owner of the eFaktura.
+        invoiceApprover:
+          type: string
+          description: |-
+            If the transaction is the result of an eFaktura that another user approved on behalf of the legal owner
+             of the eFaktura, this field will contain the name of the approver of the eFaktura.
+        message:
+          type: string
+          description: A message intended for the debtor, a.k.a. the internal note, only set for outgoing transactions.
+
+    Creditor:
+      type: object
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        name:
+          type: string
+          description: The creditor name.
+        address:
+          $ref: '#/components/schemas/PartyAddress'
+        remittanceInformation:
+          $ref: '#/components/schemas/RemittanceInformation'
+
+    PartyAddress:
+      type: object
+      properties:
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        postalCode:
+          type: string
+        postalCity:
+          type: string
+        postalCountry:
+          type: string
+
+    Product:
+      type: object
+      description: Transaction information about a product.
+      properties:
+        domain:
+          type: string
+          description: The domain code of the transaction, e.g. PMNT (payment), CARD (card), BOOK (booking), etc.
+            The concatenation of domain, family and subfamily is the ETC code, e.g. PMNT/ICDT/DMCT is outgoing domestic payment.
+
+        family:
+          type: string
+          description: The family code of the transactions, e.g. ICDT (outcoming), RCDT (incoming), etc.
+              The concatenation of domain, family and subfamily is the ETC code, e.g. PMNT/ICDT/DMCT is outgoing domestic payment.
+        subfamily:
+          type: string
+
+          description: The subfamily code of the transaction, e.g. DMCT (domestic), ESCT (SEPA), etc.
+              The concatenation of domain, family and subfamily is the ETC code, e.g. PMNT/ICDT/DMCT is outgoing domestic payment.
+        productCode:
+          type: string
+          description: The transaction's product code.
+        channelName:
+          type: string
+          description: The channel name, i.e. how the transaction entered the system, e.g. INTERNAL.
+        channelCode:
+          type: string
+          description: The channel code.
+        reportingTransactionType:
+          type: string
+          description: The reporting transaction code.
+        reportingTransactionPurpose:
+          type: string
+          description: The reporting transaction purpose.
+        proprietaryCode:
+          type: string
+          description: The deprecated proprietary code, a three digit numeric identifying the type of transaction. Partly replaced by the ETC code.
+
+    Card:
+      type: object
+      description: For a card related transation, information about the card and the point of purchase.
+      properties:
+        cardNumber:
+          type: string
+          description: The number of the card used.
+        merchantName:
+          type: string
+          description: The name of the merchant where the card was used.
+        merchantAddress:
+          type: string
+          description: The address of the merchant where the card was used.
+        merchantCity:
+          type: string
+          description: The city of the merchant where the card was used.
+        merchantCountry:
+          type: string
+          description: The country of the merchant where the card was used.
+        purchaseTime:
+          type: string
+          description: The date and time of the purchase in ISO8601 format.
+        withdrawalDate:
+          type: string
+          description: The date of withdrawal in ISO8601 format, in case of withdrawal in an ATM.
+
+    Account:
+      type: object
+      description: Transaction information about an account.
+      properties:
+        accountIdReference:
+          type: string
+          description: |-
+            Always the BBAN account number - refers to GET /accounts#id.
+        bban:
+          type: string
+          description: The BBAN version of the account number.
+        iban:
+          type: string
+          description: The IBAN version of the account number.
+        accountName:
+          type: string
+          description: The name of the account.
+        owner:
+          $ref: '#/components/schemas/AccountOwner'
+    CompoundTransactionReference:
+      type: object
+      description: Currently the archive reference and the numeric reference is included.
+      properties:
+        archive:
+          type: string
+          description: The archive reference of the transaction
+        numeric:
+          type: string
+          description: The numeric reference of the transactions. For a transaction originating from PWH this reference can be used as debitReservationId together with
+            the transactionDate as input to PINSPaymentTransactionHistoricSearch to find information about related payment(s) in PWH.
+
+    TransactionListLinks:
+      type: object
+      properties:
+        pdf:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        excel:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        csv:
+          $ref: '#/components/schemas/HttpHateoasLink'
+
+    TransactionLinksInList:
+      properties:
+        self:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        details:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        payments:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        cpsdocument:
+          $ref: '#/components/schemas/HttpHateoasLink'
+      example:
+        self:
+          href: '/accounts/{accountId}/transactions/{transactionId}'
+          context: era
+          verbs: [ GET ]
+        details:
+          href: 'accounts/{accountId}/transactions/{transactionId}/details'
+          context: era
+          verbs: [ GET ]
+        payments:
+          href: 'accounts/{accountId}/transactions/{transactionId}/payments'
+          context: era
+          verbs: [ GET ]
+        cpsdocument:
+          href: 'accounts/{accountId}/transactions/{transactionId}/cpsdocument'
+          context: era
+          verbs: [ GET ]
+
+    TransactionLinks:
+      properties:
+        pdf:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        limited:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        email:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        payment:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        payments:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        invoice:
+          $ref: '#/components/schemas/HttpHateoasLink'
+        standingOrder:
+          $ref: '#/components/schemas/HttpHateoasLink'
+
+    ExecutedAmount:
+      type: object
+      properties:
+        value:
+          type: string
+          description: The actual amount deducted from the debit account in debit account currency, possibly including fees and charges.
+          example: '11'
+        currency:
+          type: string
+          description: The currency code of the executedAmount.
+          example: 'USD'
+
+    InstructedAmount:
+      type: object
+      properties:
+        value:
+          type: string
+          description: The original payment amount in payment currency.
+          example: '10'
+        currency:
+          type: string
+          description: The currency code of the instructedAmount.
+          example: 'EUR'
+
+    EstimatedInBaseCurrencyAmount:
+      type: object
+      properties:
+        value:
+          type: string
+          description: The executed amount, but estimated in base currency.
+          example: '115'
+        currency:
+          type: string
+          description: The currency code of the estimatedInBaseCurrencyAmount.
+          example: 'NOK'
+
+    Amount:
+      type: object
+      description: An amount with value and currency.
+      properties:
+        value:
+          type: string
+          description: The numeric value of the amount.
+        currency:
+          type: string
+          description: The currency code of the amount.
+
+    ListOfPaymentsInTransaction:
+      properties:
+        list:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/PaymentInTransaction'
+
+    PaymentInTransaction:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ClientPaymentId'
+        createdBy:
+          type: string
+          example: '593683'
+        createdDate:
+          type: string
+          format: date-time
+          example: '2022-02-20T20:59:10+01:00'
+        domain:
+          $ref: "#/components/schemas/Domain"
+        status:
+          $ref: '#/components/schemas/Status'
+        rights:
+          $ref: "#/components/schemas/PaymentRights"
+        dueDate:
+          type: string
+          format: date-time
+          example: '2022-02-20T00:00:00+01:00'
+        executionDate:
+          type: string
+          format: date-time
+          example: '2022-02-20T00:00:00+01:00'
+        plannedExecutionDate:
+          type: string
+          format: date-time
+          example: '2026-03-23T00:00:00+01:00'
+        eInvoiceDetails:
+          $ref: '#/components/schemas/InvoiceDetails'
+        invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invoice'
+        paymentType:
+          $ref: "#/components/schemas/PaymentType"
+        receiptType:
+          $ref: "#/components/schemas/ReceiptType"
+        prioritized:
+          type: boolean
+        immediate:
+          type: boolean
+        debtor:
+          $ref: '#/components/schemas/PaymentDebtor'
+        creditor:
+          $ref: '#/components/schemas/PaymentCreditorResponse'
+        amounts:
+          $ref: '#/components/schemas/Amounts'
+        approvers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Approver'
+        paymentReference:
+          type: string
+          example: '261627368'
+        endToEndIdentification:
+          type: string
+          example: 'a1fc0711d8042ad81678f3dabe90a7b'
+        paymentFileId:
+          type: string
+          example: '247669'
+        originalMessageId:
+          type: string
+        standingOrderId:
+          $ref: '#/components/schemas/StandingOrderId'
+        automaticGeneratedEinvoiceAgreement:
+          type: boolean
+        invoice:
+          $ref: '#/components/schemas/Invoice'
+        links:
+          $ref: '#/components/schemas/PaymentsLinks'
+
+    ClientPaymentId:
+      type: string
+      description: client payment id
+      example: 'P342558'
+
+    Domain:
+      type: string
+      enum:
+        - domestic
+        - crossborder
+        - unknown
+
+    Status:
+      type: object
+      properties:
+        major:
+          $ref: "#/components/schemas/MajorStatus"
+        minor:
+          $ref: "#/components/schemas/MinorStatus"
+
+    MajorStatus:
+      type: string
+      enum:
+        - pending_confirmation
+        - pending_payment
+        - pending_approval
+        - cancelled
+        - suspended
+        - rejected
+        - processing
+        - completed
+        - other
+        - not_available
+      example: pending_confirmation
+
+    MinorStatus:
+      type: string
+      enum:
+        - insufficient_funds
+        - ignore_amount_limit
+        - technical_error
+        - exceeding_max_limit
+        - agreement_suspended
+        - agreement_not_found
+        - authorization_failed
+        - invalid_debit_account
+        - invalid_credit_account
+        - invalid_cid
+        - bsu_year_exceeded
+        - bsu_tot_exceeded
+        - bsu_age_exceeded
+        - cancelled_by_bank
+        - cancelled_by_user
+        - verification_required
+        - incomplete
+        - stopped
+        - stopped_by_user
+        - debit_or_credit_account_blocked
+        - remittance
+        - clearing_system_member
+        - transmission
+        - payment_information_block
+        - instruction_id
+        - insufficient_access_rights
+        - payment_ok
+        - creditor_timeout
+        - other
+      example: 'insufficient_funds'
+
+    PaymentRights:
+      type: object
+      description: Payment Rights
+      properties:
+        approvePayment:
+          type: boolean
+        deletePayment:
+          type: boolean
+        updatePayment:
+          type: boolean
+        unapprovePayment:
+          type: boolean
+        prioritizePayment:
+          type: boolean
+        unprioritizePayment:
+          type: boolean
+        stopPayment:
+          type: boolean
+        viewPayment:
+          type: boolean
+        hidePayment:
+          type: boolean
+        reactivatePayment:
+          type: boolean
+        viewEinvoicePDF:
+          type: boolean
+        receiptOrderSticker:
+          type: boolean
+        receiptOrderPrint:
+          type: boolean
+
+    InvoiceDetails:
+      type: object
+      properties:
+        eInvoiceType:
+          type: string
+          enum:
+            - einvoice
+            - unknown
+          example: 'einvoice'
+        eInvoiceReference:
+          type: string
+          example: '123456789'
+        eInvoiceRecipientName:
+          type: string
+          example: 'Ola Nordmann'
+
+    Invoice:
+      type: object
+      description: This is not eFaktura, it is structured remittance information used in a corporate context.
+      properties:
+        invoicee:
+          type: string
+          description: This is the customer number of the invoice receiver.
+          example: '23753058'
+        reference:
+          type: string
+          description: The invoice number.
+          example: '96749743'
+        date:
+          type: string
+          format: date-time
+          description: This is the invoice date.
+        cid:
+          type: string
+          description: 'Cid = kid, customer identification for norwegian payments'
+          example: '1234567897'
+        amount:
+          $ref: '#/components/schemas/Amount'
+        referredDocumentCount:
+          type: integer
+          format: int32
+
+    PaymentType:
+      type: string
+      enum:
+        - transfer
+        - urgent_transfer
+        - fixed_transfer
+        - payment
+        - urgent_payment
+        - recurring_payment
+        - ebill
+        - autopayment
+        - direct_debit
+        - credit_card_transfer
+        - credit_card_payment
+        - immediate
+        - friends
+        - smallpayment
+        - ecommerce
+        - digipost
+        - sping
+        - cheque
+        - not_available
+        - currency_transfer
+        - currency_payment
+        - charges
+        - salary_payment
+
+    ReceiptType:
+      type: string
+      enum:
+        - print
+        - sticker
+        - oblat
+        - none
+      description: '[sticker | print | none]  [ none is used only on updating payments PUT /payments/{paymentId}]'
+      example: 'sticker'
+
+    PaymentDebtor:
+      required:
+        - account
+      type: object
+      description: 'Debtor information - payer or from account'
+      properties:
+        onBehalfOf:
+          type: string
+          example: 'Morten Lund'
+        message:
+          type: string
+          maxLength: 40
+          description: 'Message on the transaction on debtor''s account'
+          example: 'Message about the payment'
+        account:
+          $ref: '#/components/schemas/AccountResponse'
+        ultimateDebtor:
+          $ref: '#/components/schemas/UltimateDebtor'
+
+    AccountResponse:
+      allOf:
+        - $ref: '#/components/schemas/AccountRequest'
+        - type: object
+          properties:
+            accountIdReference:
+              type: string
+              description: This field is returned when the account is present in the account list of the end user. It corresponds to the id field of the account in the GET /accounts response (see Accounts API).
+              example: '12345678856'
+
+    AccountRequest:
+      required:
+        - number
+      type: object
+      properties:
+        number:
+          type: string
+          example: '12345678856'
+        format:
+          type: string
+          description: '[bban || iban]      [Optional, Default=bban]'
+          example: 'bban'
+
+    UltimateDebtor:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'Kari Nordmann'
+
+    PaymentCreditorResponse:
+      required:
+        - account
+      allOf:
+        - $ref: '#/components/schemas/PaymentCreditorWithoutAccount'
+        - type: object
+          properties:
+            account:
+              $ref: '#/components/schemas/AccountResponse'
+
+    PaymentCreditorWithoutAccount:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'DNB ASA'
+        message:
+          type: string
+          maxLength: 140
+          description: 'Message on transaction on creditor''s account. Limit: 140.
+                Can be provided only if there is no invoice information.
+                Ignored when specified "multilineMessage" with more than 1 line.'
+          example: 'lån til medisinske instrumenter'
+        multilineMessage:
+          type: array
+          items:
+            type: string
+            maxLength: 140
+          description: 'Ignored when contain only 1 line and specified single "message'
+          example: [ "loan for medical instruments", "first installment" ]
+        ultimateCreditor:
+          $ref: '#/components/schemas/UltimateCreditor'
+
+    UltimateCreditor:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'Ola Nordmann'
+        addressLine1:
+          type: string
+          example: 'Horgvegen 13'
+        addressLine2:
+          type: string
+        postcode:
+          type: string
+          example: '7054'
+        town:
+          type: string
+          example: 'Trondheim'
+        countryCode:
+          type: string
+          example: "NO"
+
+    Amounts:
+      required:
+        - executed
+      type: object
+      properties:
+        currencyOfTransfer:
+          type: string
+          description: The transfer currency of a payment.
+          example: 'EUR'
+        instructed:
+          $ref: '#/components/schemas/InstructedAmount'
+        estimated:
+          type: object
+          properties:
+            value:
+              type: string
+              description: The payment amount estimated in debit account currency.
+              example: '12.77'
+            currency:
+              type: string
+              description: The debit account currency.
+              example: 'EUR'
+        estimatedBaseCurrency:
+          $ref: '#/components/schemas/EstimatedInBaseCurrencyAmount'
+        estimatedTransferCurrency:
+          type: object
+          properties:
+            value:
+              type: string
+              description: The payment amount estimated in transfer currency.
+              example: '13.77'
+            currency:
+              type: string
+              description: The payment transfer currency.
+              example: 'EUR'
+        executed:
+          $ref: '#/components/schemas/ExecutedAmount'
+
+    Approver:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'Elisabeth Hansen'
+        dateOfApproval:
+          type: string
+          format: date-time
+          example: '2022-08-04T08:39:45+02:00'
+        userid:
+          type: string
+          example: '593683'
+
+    StandingOrderId:
+      type: string
+      description: encrypted standing order id
+      example: 'enc!!some-encrypted-id'
+
+    PaymentsLinks:
+      type: object
+      properties:
+        self:
+          $ref: '#/components/schemas/HttpHateoasLink'
+
+    EraError:
+      type: object
+      properties:
+        system:
+          type: string
+          example: 'ERA-MAIN'
+        status:
+          type: integer
+          example: 400
+        code:
+          type: string
+          example: 'BAD_REQUEST'
+        message:
+          type: string
+          example: 'Error message appears here'
+
+  examples:
+    TransactionListExample:
+      value:
+        authorizedUserMessage: You will only see transactions from 2021-10-14.
+        list:
+          - id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+            status: 'booked'
+            category: 'payment'
+            categoryDetails: 'Outgoing domestic payment'
+            displayText: 'To: Mr. Recipient'
+            transactionDate: '2021-04-02'
+            amounts:
+              executed:
+                value: -1.91
+                currency: 'NOK'
+            links:
+              self:
+                href: '/accounts/qWe457=97676/transactions/q231xcb67789=74'
+                verbs:
+                  - GET
+              details:
+                href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/details'
+                verbs:
+                  - GET
+
+          - id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+            status: 'booked'
+            category: 'payment'
+            categoryDetails: 'Outgoing domestic payment'
+            displayText: 'To: Mr. Recipient'
+            transactionDate: '2021-04-02'
+            amounts:
+              executedAmount:
+                value: '-1.92'
+                currency: 'NOK'
+            links:
+              self:
+                href: '/accounts/qWe457=97676/transactions/q231xcb67789=74'
+                verbs:
+                  - GET
+              details:
+                href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/details'
+                verbs:
+                  - GET
+
+          - id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+            status: 'booked'
+            category: 'payment'
+            categoryDetails: 'Outgoing domestic payment'
+            displayText: 'To: Mr. Recipient'
+            transactionDate: '2021-04-02'
+            amounts:
+              executedAmount:
+                value: '-1.93'
+                currency: 'NOK'
+            links:
+              self:
+                href: '/accounts/qWe457=97676/transactions/q231xcb67789=74'
+                verbs:
+                  - GET
+              details:
+                href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/details'
+                verbs:
+                  - GET
+        links:
+          pdf:
+            href: '/accounts/{accountid}/transactions/search/export?document_format=pdf'
+            verbs:
+            - POST
+          excel:
+              href: '/accounts/{accountid}/transactions/search/export?document_format=excel'
+              verbs: [ 'POST' ]
+          csv:
+              href: '/accounts/{accountid}/transactions/search/export?document_format=csv'
+              verbs: [ 'POST' ]
+        next:
+          nextPageToken: 'qwer45678yu6uhghh64fdghggjhrt'
+
+    TransactionPaymentShort:
+      value:
+        id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+        status: 'booked'
+        category: 'payment'
+        categoryDetails: 'Outgoing domestic payment'
+        displayText: 'To: Mr. Recipient'
+        transactionDate: '2021-04-02'
+        amounts:
+          executedAmount:
+            value: '-1.99'
+            currency: 'NOK'
+        links:
+          self:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74'
+            verbs: [ 'GET' ]
+
+    TransactionTransferShort:
+      value:
+        id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+        status: 'booked'
+        category: 'transfer'
+        categoryDetails: 'Incoming domestic transfer'
+        displayText: 'From: Mr. Sender'
+        transactionDate: '2021-04-02'
+        amounts:
+          executedAmount:
+            value: '1.36'
+            currency: 'NOK'
+        links:
+          self:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74'
+            verbs:
+              - GET
+          details:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/details'
+            verbs:
+              - GET
+
+    TransactionWithMessage:
+      value:
+        id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+        canBeCopied: 'domestic'
+        executionTime: '2021-04-03T00:00:00'
+        bookingDate: '2021-04-03'
+        valueDate: '2021-04-03'
+        status: 'booked'
+        category: 'payment'
+        categoryDetails: 'Incoming domestic payment w/message'
+        displayText: 'From: Mr. Sender'
+        transactionDate: '2021-04-02'
+        amounts:
+          executedAmount:
+            value: '1.36'
+            currency: 'NOK'
+        debitor:
+          account:
+            accountIdReference: '32990546987'
+            bban: '32990546987'
+            iban: 'NO4732990546987'
+            accountName: 'Name of an account'
+          name: 'Mr. Payer'
+        creditor:
+          account:
+            bban: '49771245678'
+            iban: 'NO4749771245678'
+          name: 'Mr. Recipient'
+          multiLineMessage:
+            - 'I am returning the money you lent me last month'
+        links:
+          pdf:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/pdf'
+            verbs:
+              - POST
+          limited:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/limited/pdf'
+            verbs:
+              - POST
+          email:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/limited/pdf/email'
+            verbs:
+              - POST
+
+    TransactionWithKID:
+      value:
+        id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+        canBeCopied: 'domestic'
+        executionTime: '2021-04-03T00:00:00'
+        bookingDate: '2021-04-03'
+        valueDate: '2021-04-03'
+        status: 'booked'
+        category: 'payment'
+        categoryDetails: 'Incoming domestic payment w/KID'
+        displayText: 'From: Mr. Sender'
+        transactionDate: '2021-04-02'
+        amounts:
+          executedAmount:
+            value: '1.36'
+            currency: 'NOK'
+        debitor:
+          account:
+            accountIdReference: '32990546987'
+            bban: '32990546987'
+            iban: 'NO4732990546987'
+            accountName: 'Account name'
+          name: 'Mr. Payer'
+        creditor:
+          account:
+            bban: '49771245678'
+            iban: 'NO4749771245678'
+          name: 'Mr. Recipient'
+          customerReference: '1234567898765432'
+        links:
+          pdf:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/pdf'
+            verbs:
+              - POST
+          limited:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/limited/pdf'
+            verbs:
+              - POST
+          email:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/limited/pdf/email'
+            verbs:
+              - POST
+
+    TransactionWithMultiplePayments:
+      value:
+        id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+        canBeCopied: 'no'
+        executionTime: '2021-04-03T00:00:00'
+        bookingDate: '2021-04-03'
+        valueDate: '2021-04-03'
+        status: 'booked'
+        category: 'payment'
+        categoryDetails: 'Outgoing domestic payment'
+        displayText: 'Payment'
+        transactionDate: '2021-04-02'
+        amounts:
+          executedAmount:
+            value: '-1.36'
+            currency: 'NOK'
+        debitor:
+          account:
+            accountIdReference: '32990546987'
+            bban: '32990546987'
+            iban: 'NO4732990546987'
+            accountName: 'The account name'
+          name: 'Mr. Payer'
+        creditor:
+          account:
+            accountIdReference: '32990546987'
+            bban: '32990546987'
+            iban: 'NO4732990546987'
+          name: 'Mr. Recipient'
+
+        links:
+          pdf:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/pdf'
+            verbs:
+              - POST
+          payments:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/payments'
+            verbs:
+              - POST
+
+    TransactionWithStructuredInformation:
+      value:
+        id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+        canBeCopied: 'domestic'
+        executionTime: '2021-04-03T00:00:00'
+        bookingDate: '2021-04-03'
+        valueDate: '2021-04-03'
+        status: 'booked'
+        category: 'payment'
+        categoryDetails: 'Outgoing domestic payment'
+        displayText: 'Mr. Recipient'
+        transactionDate: '2021-04-02'
+        amounts:
+          executedAmount:
+            value: '-1318.67'
+            currency: 'NOK'
+        debitor:
+          account:
+            accountIdReference: '32990546987'
+            bban: '32990546987'
+            iban: 'NO4732990546987'
+            accountName: 'An account name'
+          name: 'Mr. Payer'
+        creditor:
+          account:
+            bban: '49771245678'
+            iban: 'NO4749771245678'
+          name: 'Mr. Recipient'
+          structuredMessage:
+            - invoiceNumber: "123"
+              customerNumber: "321"
+              invoiceAmount: -123.45
+              invoiceDate: "2022-01-03"
+            - invoiceNumber: "124"
+              customerReference: "34534231"
+              customerNumber: "321"
+              invoiceAmount: -999.45
+              invoiceDate: "2022-01-04"
+            - invoiceNumber: "125"
+              invoiceAmount: -195.77
+              invoiceDate: "2022-01-05"
+        links:
+          pdf:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/pdf'
+            verbs:
+              - POST
+          limited:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/limited/pdf'
+            verbs:
+              - POST
+          email:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/limited/pdf/email'
+            verbs:
+              - POST
+
+    TransactionFromInvoice:
+      value:
+        id: 'C:B:97103385321::347702:00003453746345:2021-04-20'
+        canBeCopied: 'domestic'
+        executionTime: '2021-04-03T00:00:00'
+        bookingDate: '2021-04-03'
+        valueDate: '2021-04-03'
+        status: 'booked'
+        category: 'payment'
+        categoryDetails: 'Outgoing domestic payment w/KID'
+        displayText: 'Mr. eFaktura Issuer'
+        transactionDate: '2021-04-02'
+        amounts:
+          executedAmount:
+            value: '1.36'
+            currency: 'NOK'
+        debitor:
+          account:
+            accountIdReference: '32990546987'
+            bban: '32990546987'
+            iban: 'NO4732990546987'
+            accountName: 'Account name'
+          name: 'Mr. Payer'
+          invoiceOwner: 'Berit Banan'
+        creditor:
+          account:
+            bban: '49771245678'
+            iban: 'NO4749771245678'
+          name: 'Mr. eFaktura Issuer'
+          customerReference: '1234567898765432'
+        links:
+          pdf:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/pdf'
+            verbs:
+              - POST
+          limited:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/limited/pdf'
+            verbs:
+              - POST
+          email:
+            href: '/accounts/qWe457=97676/transactions/q231xcb67789=74/limited/pdf/email'
+            verbs:
+              - POST
+          invoice:
+            href: '/ebills/{ebillid}/invoice'
+            verbs:
+              - GET
+
+    TransactionSearchRequestExample:
+      value:
+        category:
+        - incoming
+        - payment
+        - salary
+        fromDate: '2021-01-01'
+        toDate: '2021-01-31'
+        amountFrom: 1.99
+        amountTo: 7.88
+        freeText: 'Donald Duck'
+        currency: 'NOK'
+        count: 200
+
+    PaymentsInTransactionExample:
+      value:
+        list:
+          - id: 'P234567'
+            createdBy: '593683'
+            createdDate: '2023-02-20T20:59:10+01:00'
+            domain: 'domestic'
+            status:
+              major: 'completed'
+            rights:
+              approvePayment: false
+              deletePayment: false
+              updatePayment: false
+              unapprovePayment: false
+              prioritizePayment: false
+              unprioritizePayment: false
+              stopPayment: false
+              viewPayment: true
+              hidePayment: false
+              reactivatePayment: false
+              viewEinvoicePDF: true
+              receiptOrderSticker: true
+              receiptOrderPrint: true
+            dueDate: '2023-10-11T20:59:10+01:00'
+            executionDate: '2023-10-11T20:59:10+01:00'
+            paymentType: 'payment'
+            prioritized : false
+            immediate: false
+            debtor:
+              account:
+                number: '12345678901'
+                format: 'bban'
+                accountIdReference: '12345678901'
+              message: 'The debtor message'
+            creditor:
+              name: 'Kari Nordmann'
+              message: 'Message to recipient'
+              multilineMessage:
+                - 'Message to recipient'
+              account:
+                number: '89012313567'
+                format: 'bban'
+                accountIdReference: '89012313567'
+            amounts:
+              instructed:
+                value: '10'
+                currency: 'NOK'
+              executed:
+                value: '10'
+                currency: 'NOK'
+            approvers:
+              - name: 'Ola Nordmann'
+                dateOfApproval: '2023-09-10T12:00:00.000'
+                userId: '596883'
+              - name: 'Jens Nordmann'
+                dateOfApproval: '2023-09-10T12:00:00.000'
+                userId: '457123'
+            paymentReference: 'P123456'
+            links:
+              self:
+                href: '/payments/enc!!fgjruituyyngngvjsjshf=='
+                verbs:
+                  - GET
+          - id: 'P234567'
+            createdBy: '593683'
+            createdDate: '2023-09-14T12:00:00.000'
+            domain: 'domestic'
+            status:
+              major: 'completed'
+            rights:
+              approvePayment: false
+              deletePayment: false
+              updatePayment: false
+              unapprovePayment: false
+              prioritizePayment: false
+              unprioritizePayment: false
+              stopPayment: false
+              viewPayment: true
+              hidePayment: false
+              reactivatePayment: false
+              viewEinvoicePDF: true
+              receiptOrderSticker: true
+              receiptOrderPrint: true
+            dueDate: '2023-10-11T12:00:00.000'
+            executionDate: '2023-10-11T12:00:00.000'
+            paymentType: 'payment'
+            prioritized: false
+            immediate: false
+            debtor:
+              account:
+                number: '12345678901'
+                format: 'bban'
+                accountIdReference: '12345678901'
+              message: 'The debtor message'
+            creditor:
+              name: 'Kari Nordmann'
+              message: 'Message to recipient'
+              multilineMessage:
+                - 'Message to recipient'
+              account:
+                number: '89012313567'
+                format: 'bban'
+                accountIdReference: '89012313567'
+            amounts:
+              instructed:
+                value: '12'
+                currency: 'NOK'
+              executed:
+                value: '12'
+                currency: 'NOK'
+            approvers:
+              - name: 'Ola Nordmann'
+                dateOfApproval: '2023-09-15T12:00:00.000'
+                userId: '596883'
+              - name: 'Jens Nordmann'
+                dateOfApproval: '2023-09-17T12:00:00.000'
+                userId: '457123'
+            paymentReference: 'P123457'
+            links:
+              self:
+                href: '/payments/enc!!fgjrui3456789gvjsjshf=='
+                verbs:
+                  - GET
